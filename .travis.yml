@@ -17,7 +17,7 @@ before_install:
  - sudo apt-get update -qq
 
 install:
- - sudo apt-get install -qq cabal-install-$CABALVER ghc-$GHCVER
+ - sudo apt-get install -qq cabal-install-$CABALVER ghc-$GHCVER freeglut3-dev
  - export PATH="/opt/cabal/$CABALVER/bin:/opt/ghc/$GHCVER/bin:$PATH"
 
 before_script:
