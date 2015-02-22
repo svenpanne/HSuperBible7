@@ -13,21 +13,21 @@ cabal-version: >=1.10
 library
   exposed-modules:
     SB6
-  build-depends: base >=4.7 && <5, GLUT
+  build-depends: base >= 3 && < 5, GLUT
   hs-source-dirs: src/SB6
   default-language: Haskell2010
   ghc-options: -Wall
 
 executable SimpleClear
   main-is: SimpleClear.hs
-  build-depends: base >=4.7 && <5, HSuperBible6
+  build-depends: base >= 3 && < 5, HSuperBible6
   hs-source-dirs: src/SimpleClear
   default-language: Haskell2010
   ghc-options: -Wall
 
 executable SinglePoint
   main-is: SinglePoint.hs
-  build-depends: base >=4.7 && <5, HSuperBible6
+  build-depends: base >= 3 && < 5, HSuperBible6
   hs-source-dirs: src/SinglePoint
   default-language: Haskell2010
   ghc-options: -Wall
