@@ -11,7 +11,7 @@ init = return $ appInfo { title = "OpenGL SuperBible - Simple Clear" }
 
 render :: Double -> IO ()
 render _currentTime =
-  withArray ([1, 0, 0, 1] :: [GLfloat]) $
+  withArray [1, 0, 0, 1] $
     glClearBufferfv gl_COLOR 0
 
 main :: IO ()
