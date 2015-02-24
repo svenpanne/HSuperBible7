@@ -7,11 +7,16 @@ module SB6 (
 
 import Control.Monad
 import Data.Time.Clock
+import Foreign.C.Types
+import Foreign.Ptr
 import System.Exit
 #if DEBUG
 import System.IO
 #endif
 import Graphics.UI.GLUT as GLUT
+import Graphics.Rendering.OpenGL.Raw ( getProcAddress )
+
+--------------------------------------------------------------------------------
 
 data Application = Application
   { init :: IO AppInfo
@@ -35,6 +40,8 @@ app = Application
   , onMouseButton = \_mouseButton _keyState -> return ()
   , onMouseMove = \_position -> return ()
   }
+
+--------------------------------------------------------------------------------
 
 data AppInfo = AppInfo
   { title :: String
@@ -69,17 +76,17 @@ appInfo = AppInfo
 #endif
   }
 
+--------------------------------------------------------------------------------
+
 run :: Application -> IO ()
 run theApp = do
   startTime <- getCurrentTime
   void getArgsAndInitialize
   theAppInfo <- SB6.init theApp
-
   let numOpt f fld = opt (f . fromIntegral . fld $ theAppInfo) ((> 0) . fld)
       opt val predicate = if predicate theAppInfo then [ val ] else []
       width (Size w _) = w
       height (Size _ h) = h
-
   initialDisplayMode $=
     [ RGBAMode, WithDepthBuffer, DoubleBuffered ] ++
     numOpt WithSamplesPerPixel SB6.samples ++
@@ -90,7 +97,6 @@ run theApp = do
 #if DEBUG
     ++ [ DebugContext ]
 #endif
-
   if fullscreen theAppInfo
     then do
       gameModeCapabilities $=
@@ -102,10 +108,8 @@ run theApp = do
     else do
       initialWindowSize $= SB6.windowSize theAppInfo
       void . createWindow . title $ theAppInfo
-
-  unless (SB6.cursor theAppInfo) $
-    GLUT.cursor $= None
-
+  unless (SB6.cursor theAppInfo) (GLUT.cursor $= None)
+  when (vsync theAppInfo) (swapInterval 1)
   displayCallback $= display theApp startTime
   closeCallback $= Just (terminate theApp)
   reshapeCallback $= Just (onResize theApp)
@@ -114,7 +118,6 @@ run theApp = do
   passiveMotionCallback $= Just (onMouseMove theApp)
 
   -- TODO: Setup debug message callback
-
 #if DEBUG
   forM_ [ ("VENDOR", vendor),
           ("VERSION", glVersion),
@@ -122,7 +125,6 @@ run theApp = do
     val <- get var
     hPutStrLn stderr (name ++ ": " ++ val)
 #endif
-
   startup theApp
   mainLoop
 
@@ -147,3 +149,28 @@ terminate theApp = do
   gma <- get gameModeActive
   when gma leaveGameMode
   exitSuccess
+
+--------------------------------------------------------------------------------
+
+-- Note that the list of extensions might be empty because we use the core
+-- profile, so we can't test the existence before the actual getProcAddress.
+swapInterval :: Int -> IO ()
+swapInterval interval = do
+  found <- tryCall makeWglSwapInterval "wglGetSwapIntervalEXT" interval
+  unless found $
+    void $ tryCall makeGlXSwapInterval "glXSwapIntervalSGI" interval
+
+type SwapInterval = CInt -> IO CInt
+
+tryCall :: (FunPtr (SwapInterval) -> SwapInterval) -> String -> Int -> IO Bool
+tryCall make name interval = do
+  p <- getProcAddress name
+  if p == nullFunPtr
+    then return False
+    else make p (fromIntegral interval) >> return True
+
+foreign import stdcall "dynamic" makeWglSwapInterval
+  :: FunPtr SwapInterval -> SwapInterval
+
+foreign import ccall "dynamic" makeGlXSwapInterval
+  :: FunPtr SwapInterval -> SwapInterval
