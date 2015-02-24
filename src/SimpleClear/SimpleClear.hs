@@ -3,7 +3,6 @@
 module Main ( main ) where
 
 import Foreign.Marshal.Array
-import Foreign.Ptr
 import Graphics.Rendering.OpenGL.Raw.Core43
 import SB6
 
@@ -13,7 +12,7 @@ init = return $ appInfo { title = "OpenGL SuperBible - Simple Clear" }
 render :: Double -> IO ()
 render _currentTime =
   withArray ([1, 0, 0, 1] :: [GLfloat]) $
-    glClearBufferfv gl_COLOR 0 . castPtr
+    glClearBufferfv gl_COLOR 0
 
 main :: IO ()
 main = run $ app {
