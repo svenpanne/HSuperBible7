@@ -1,4 +1,5 @@
--- SimpleClear.hs (adapted from simpleclear.cpp which is (c) Graham Sellers)
+-- SimpleClear.hs, see listings 2.1 and 2.2 in the OpenGL SuperBible, 6th ed.
+-- Adapted from simpleclear.cpp which is (c) Graham Sellers.
 
 module Main ( main ) where
 
@@ -10,8 +11,14 @@ init :: IO APPINFO
 init = return $ appInfo { title = "OpenGL SuperBible - Simple Clear" }
 
 render :: Double -> IO ()
-render _currentTime =
-  withArray [1, 0, 0, 1] $
+render currentTime = do
+  -- This is actually a combination of listings 2.1 and 2.2.
+  let red   = [ 1, 0, 0, 1 ]
+      color = [ realToFrac (sin currentTime) * 0.5 + 0.5
+              , realToFrac (cos currentTime) * 0.5 + 0.5
+              , 0
+              , 1 ]
+  withArray (if True then color else red) $
     glClearBufferfv gl_COLOR 0
 
 main :: IO ()
