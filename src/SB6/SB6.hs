@@ -3,17 +3,21 @@ module SB6 (
   Application(..), app,
   AppInfo(..), appInfo,
   run,
+  DebugSource(..), DebugType(..), DebugSeverity(..),
   packUtf8
 ) where
 
-import Control.Monad ( when, unless, void, forM_ )
+import Control.Monad ( when, unless, void )
+#if DEBUG
+import Control.Monad ( forM_ )
+#endif
 import qualified Data.ByteString as B
 import Data.List ( isPrefixOf )
 import Data.Time.Clock ( UTCTime, diffUTCTime, getCurrentTime )
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE
 import Foreign.C.String ( peekCStringLen )
-import Foreign.C.Types ( CInt(..) )
+import Foreign.C.Types
 import Foreign.Ptr ( nullPtr, FunPtr, nullFunPtr )
 import System.Exit ( exitSuccess )
 import System.IO ( hPutStrLn, stderr )
