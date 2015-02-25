@@ -6,6 +6,7 @@ module SB6 (
 ) where
 
 import Control.Monad
+import Data.List
 import Data.Time.Clock
 import Foreign.C.Types
 import Foreign.Ptr
@@ -126,6 +127,7 @@ run theApp = do
     hPutStrLn stderr (name ++ ": " ++ val)
 #endif
   startup theApp
+  ifFreeGLUT (actionOnWindowClose $= MainLoopReturns) (return ())
   mainLoop
 
 display :: Application -> UTCTime -> DisplayCallback
@@ -138,7 +140,7 @@ display theApp startTime = do
 keyboardMouse :: Application -> KeyboardMouseCallback
 keyboardMouse theApp key keyState _modifiers _position =
   case (key, keyState) of
-    (Char '\ESC', Up) -> terminate theApp
+    (Char '\ESC', Up) -> do closeCallback $= Nothing; terminate theApp
     (Char c, _) -> onKey theApp (Right c) keyState
     (SpecialKey k, _) -> onKey theApp (Left k) keyState
     (MouseButton b, _) -> onMouseButton theApp b keyState
@@ -148,7 +150,14 @@ terminate theApp = do
   shutdown theApp
   gma <- get gameModeActive
   when gma leaveGameMode
-  exitSuccess
+  ifFreeGLUT leaveMainLoop exitSuccess
+
+ifFreeGLUT :: IO () -> IO () -> IO ()
+ifFreeGLUT freeGLUTAction otherAction = do
+  version <- get glutVersion
+  if "freeglut" `isPrefixOf` version
+    then freeGLUTAction
+    else otherAction
 
 --------------------------------------------------------------------------------
 
