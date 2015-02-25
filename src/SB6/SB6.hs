@@ -164,6 +164,7 @@ ifFreeGLUT freeGLUTAction otherAction = do
 -- Note that the list of extensions might be empty because we use the core
 -- profile, so we can't test the existence before the actual getProcAddress.
 swapInterval :: Int -> IO ()
+#if 0
 swapInterval interval = do
   found <- tryCall makeWglSwapInterval "wglGetSwapIntervalEXT" interval
   unless found $
@@ -183,3 +184,31 @@ foreign import stdcall "dynamic" makeWglSwapInterval
 
 foreign import ccall "dynamic" makeGlXSwapInterval
   :: FunPtr SwapInterval -> SwapInterval
+#endif
+
+
+#if 0
+swapInterval interval = do
+  funPtr <- getProcAddress "glXSwapIntervalSGI"
+  unless (funPtr == nullFunPtr) $
+    void $ dyn_glXSwapIntervalSGI funPtr (fromIntegral interval)
+
+foreign import ccall "dynamic" dyn_glXSwapIntervalSGI
+  :: FunPtr (CInt -> IO CInt)
+  ->         CInt -> IO CInt
+
+#elif 1
+swapInterval interval = do
+  funPtr <- getProcAddress "wglGetSwapIntervalEXT"
+  unless (funPtr == nullFunPtr) $
+    void $ dyn_wglGetSwapIntervalEXT funPtr (fromIntegral interval)
+
+type BOOL = CInt
+
+foreign import stdcall "dynamic" dyn_wglGetSwapIntervalEXT
+  :: FunPtr (CInt -> IO BOOL)
+  ->         CInt -> IO BOOL
+
+#else
+
+#endif
