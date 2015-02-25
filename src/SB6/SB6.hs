@@ -211,13 +211,13 @@ swapIntervalName :: String
 #if OS_WINDOWS
 swapIntervalName = "wglGetSwapIntervalEXT"
 
-foreign import stdcall "dynamic" makeSwapInterval
+foreign import CALLCONV "dynamic" makeSwapInterval
   :: FunPtr (CInt -> IO CInt)
   ->         CInt -> IO CInt
 #else
 swapIntervalName = "glXSwapIntervalSGI"
 
-foreign import ccall "dynamic" makeSwapInterval
+foreign import CALLCONV "dynamic" makeSwapInterval
   :: FunPtr (CInt -> IO CInt)
   ->         CInt -> IO CInt
 #endif

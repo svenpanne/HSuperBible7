@@ -28,6 +28,12 @@ library
     cpp-options: "-DOS_DARWIN"
   if os(windows)
     cpp-options: "-DOS_WINDOWS"
+    if arch(i386)
+      cpp-options: "-DCALLCONV=stdcall"
+    else
+      cpp-options: "-DCALLCONV=ccall"
+  else
+    cpp-options: "-DCALLCONV=ccall"
 
 executable SimpleClear
   main-is: SimpleClear.hs
