@@ -1,19 +1,14 @@
 module Main ( main ) where
 
 import Data.IORef ( IORef, newIORef )
-import Foreign.C.String ( withCString )
-import Foreign.Marshal.Alloc ( alloca )
 import Foreign.Marshal.Array ( withArray )
-import Foreign.Marshal.Utils ( with )
-import Foreign.Ptr ( nullPtr )
-import Foreign.Storable ( peek )
-import Graphics.Rendering.OpenGL ( get, ($=) )
-import Graphics.Rendering.OpenGL.Raw.Core43
+import Graphics.Rendering.OpenGL
+import Graphics.Rendering.OpenGL.Raw.Core43 ( glClearBufferfv, gl_COLOR )
 import SB6
 
 data State = State
-  { programRef :: IORef GLuint
-  , vaoRef :: IORef GLuint }
+  { programRef :: IORef Program
+  , vaoRef :: IORef VertexArrayObject }
 
 init :: IO AppInfo
 init = return $ appInfo { title = "OpenGL SuperBible - Single Point" }
@@ -37,45 +32,39 @@ startup state = do
         , "    color = vec4(0.0, 0.8, 1.0, 1.0);         "
         , "}                                             " ]
 
-  program <- glCreateProgram
+  program <- createProgram
   programRef state $= program
 
-  fs <- glCreateShader gl_FRAGMENT_SHADER
-  withCString fs_source $ \buf ->
-    with buf $ \bufBuf ->
-      glShaderSource fs 1 bufBuf nullPtr
-  glCompileShader fs
+  fs <- createShader FragmentShader
+  shaderSourceBS fs $= packUtf8 fs_source
+  compileShader fs
 
-  vs <- glCreateShader gl_VERTEX_SHADER
-  withCString vs_source $ \buf ->
-    with buf $ \bufBuf ->
-      glShaderSource vs 1 bufBuf nullPtr
-  glCompileShader vs
+  vs <- createShader VertexShader
+  shaderSourceBS vs $= packUtf8 vs_source
+  compileShader vs
 
-  glAttachShader program vs
-  glAttachShader program fs
+  attachShader program vs
+  attachShader program fs
 
-  glLinkProgram program
+  linkProgram program
 
-  vao <- alloca $ \buf -> do
-    glGenVertexArrays 1 buf
-    peek buf
+  vao <- genObjectName
   vaoRef state $= vao
-  glBindVertexArray vao
+  bindVertexArrayObject $= Just vao
 
 render :: State -> Double -> IO ()
 render state _currentTime = do
   withArray [ 1, 0, 0, 1 ] $
     glClearBufferfv gl_COLOR 0
-  glUseProgram =<< get (programRef state)
-  glPointSize 40
-  glDrawArrays gl_POINTS 0 1
+  p <- get (programRef state)
+  currentProgram $= Just p
+  pointSize $= 40
+  drawArrays Points 0 1
 
 shutdown :: State -> IO ()
 shutdown state = do
-  vao <- get (vaoRef state)
-  with vao $ glDeleteVertexArrays 1
-  glDeleteProgram =<< get (programRef state)
+  deleteObjectName =<< get (vaoRef state)
+  deleteObjectName =<< get (programRef state)
 
 main :: IO ()
 main = do

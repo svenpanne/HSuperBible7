@@ -2,12 +2,16 @@
 module SB6 (
   Application(..), app,
   AppInfo(..), appInfo,
-  run
+  run,
+  packUtf8
 ) where
 
 import Control.Monad ( when, unless, void, forM_ )
+import qualified Data.ByteString as B
 import Data.List ( isPrefixOf )
 import Data.Time.Clock ( UTCTime, diffUTCTime, getCurrentTime )
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
 import Foreign.C.String ( peekCStringLen )
 import Foreign.C.Types ( CInt(..) )
 import Foreign.Ptr ( nullPtr, FunPtr, nullFunPtr )
@@ -278,3 +282,8 @@ unmarshalDebugSeverity x
   | x == gl_DEBUG_SEVERITY_LOW = DebugSeverityLow
   | x == gl_DEBUG_SEVERITY_NOTIFICATION = DebugSeverityNotification
   | otherwise = error ("unmarshalDebugSeverity: illegal value " ++ show x)
+
+--------------------------------------------------------------------------------
+
+packUtf8 :: String -> B.ByteString
+packUtf8 = TE.encodeUtf8 . T.pack
