@@ -3,7 +3,7 @@
 
 module Main ( main ) where
 
-import Foreign.Marshal.Array
+import Foreign.Marshal.Array ( withArray )
 import Graphics.Rendering.OpenGL.Raw.Core43
 import SB6
 
