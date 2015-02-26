@@ -57,12 +57,10 @@ startup state = do
 
 render :: State -> Double -> IO ()
 render state currentTime = do
-  let red   = [ 1, 0, 0, 1 ]
-      color = [ realToFrac (sin currentTime) * 0.5 + 0.5
-              , realToFrac (cos currentTime) * 0.5 + 0.5
-              , 0
-              , 1 ]
-  withArray (if True then color else red) $
+  withArray [ realToFrac (sin currentTime) * 0.5 + 0.5
+            , realToFrac (cos currentTime) * 0.5 + 0.5
+            , 0
+            , 1 ] $
     glClearBufferfv gl_COLOR 0
 
   p <- get (programRef state)
