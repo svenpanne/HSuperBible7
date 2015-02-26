@@ -1,4 +1,4 @@
--- SinglePoint.hs, see listing ??? in the OpenGL SuperBible, 6th ed.
+-- SinglePoint.hs, see listings 2.3 - 2.7 in the OpenGL SuperBible, 6th ed.
 -- Adapted from singlepoint.cpp which is (c) 2012-2013 Graham Sellers.
 
 module Main ( main ) where
@@ -56,8 +56,13 @@ startup state = do
   bindVertexArrayObject $= Just vao
 
 render :: State -> Double -> IO ()
-render state _currentTime = do
-  withArray [ 1, 0, 0, 1 ] $
+render state currentTime = do
+  let red   = [ 1, 0, 0, 1 ]
+      color = [ realToFrac (sin currentTime) * 0.5 + 0.5
+              , realToFrac (cos currentTime) * 0.5 + 0.5
+              , 0
+              , 1 ]
+  withArray (if True then color else red) $
     glClearBufferfv gl_COLOR 0
 
   p <- get (programRef state)

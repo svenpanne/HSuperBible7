@@ -1,4 +1,4 @@
--- SingleTri.hs, see listing ??? in the OpenGL SuperBible, 6th ed.
+-- SingleTri.hs, see listings 2.8 - 2.9 the OpenGL SuperBible, 6th ed.
 -- Adapted from singletri.cpp which is (c) 2012-2013 Graham Sellers.
 
 module Main ( main ) where
@@ -61,7 +61,7 @@ startup state = do
 
 render :: State -> Double -> IO ()
 render state _currentTime = do
-  withArray [ 0, 0.25, 0, 1 ] $
+  withArray [ 0, 0.2, 0, 1 ] $
     glClearBufferfv gl_COLOR 0
 
   p <- get (programRef state)
