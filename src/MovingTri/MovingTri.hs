@@ -20,7 +20,7 @@ init = return $ appInfo { title = "OpenGL SuperBible - Moving Triangle" }
 startup :: State -> IO ()
 startup state = do
   let vs_source = unlines
-        [ "#version 420 core                                                 "
+        [ "#version 430 core                                                 "
         , "                                                                  "
         , "layout (location = 0) in vec4 offset;                             "
         , "                                                                  "
@@ -34,7 +34,7 @@ startup state = do
         , "    gl_Position = vertices[gl_VertexID] + offset;                 "
         , "}                                                                 " ]
       fs_source = unlines
-        [ "#version 420 core                                                 "
+        [ "#version 430 core                                                 "
         , "                                                                  "
         , "out vec4 color;                                                   "
         , "                                                                  "
@@ -46,13 +46,13 @@ startup state = do
   program <- createProgram
   programRef state $= program
 
-  fs <- createShader FragmentShader
-  shaderSourceBS fs $= packUtf8 fs_source
-  compileShader fs
-
   vs <- createShader VertexShader
   shaderSourceBS vs $= packUtf8 vs_source
   compileShader vs
+
+  fs <- createShader FragmentShader
+  shaderSourceBS fs $= packUtf8 fs_source
+  compileShader fs
 
   attachShader program vs
   attachShader program fs

@@ -19,7 +19,7 @@ init = return $ appInfo { title = "OpenGL SuperBible - Single Triangle" }
 startup :: State -> IO ()
 startup state = do
   let vs_source = unlines
-        [ "#version 420 core                                                 "
+        [ "#version 430 core                                                 "
         , "                                                                  "
         , "void main(void)                                                   "
         , "{                                                                 "
@@ -30,7 +30,7 @@ startup state = do
         , "    gl_Position = vertices[gl_VertexID];                          "
         , "}                                                                 " ]
       fs_source = unlines
-        [ "#version 420 core                                                 "
+        [ "#version 430 core                                                 "
         , "                                                                  "
         , "out vec4 color;                                                   "
         , "                                                                  "
@@ -42,13 +42,13 @@ startup state = do
   program <- createProgram
   programRef state $= program
 
-  fs <- createShader FragmentShader
-  shaderSourceBS fs $= packUtf8 fs_source
-  compileShader fs
-
   vs <- createShader VertexShader
   shaderSourceBS vs $= packUtf8 vs_source
   compileShader vs
+
+  fs <- createShader FragmentShader
+  shaderSourceBS fs $= packUtf8 fs_source
+  compileShader fs
 
   attachShader program vs
   attachShader program fs
@@ -61,7 +61,7 @@ startup state = do
 
 render :: State -> Double -> IO ()
 render state _currentTime = do
-  withArray [ 0, 0.2, 0, 1 ] $
+  withArray [ 0, 0.25, 0, 1 ] $
     glClearBufferfv gl_COLOR 0
 
   p <- get (programRef state)

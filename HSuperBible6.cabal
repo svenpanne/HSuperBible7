@@ -63,6 +63,13 @@ executable MovingTri
   default-language: Haskell2010
   ghc-options: -Wall
 
+executable TessellatedTri
+  main-is: TessellatedTri.hs
+  build-depends: base >= 3 && < 5, HSuperBible6, OpenGL, OpenGLRaw
+  hs-source-dirs: src/TessellatedTri
+  default-language: Haskell2010
+  ghc-options: -Wall
+
 source-repository head
   type: git
   location: https://github.com/svenpanne/HSuperBible6.git

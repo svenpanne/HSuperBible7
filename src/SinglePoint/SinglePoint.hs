@@ -19,14 +19,14 @@ init = return $ appInfo { title = "OpenGL SuperBible - Single Point" }
 startup :: State -> IO ()
 startup state = do
   let vs_source = unlines
-        [ "#version 420 core                             "
+        [ "#version 430 core                             "
         , "                                              "
         , "void main(void)                               "
         , "{                                             "
         , "    gl_Position = vec4(0.0, 0.0, 0.0, 1.0);   "
         , "}                                             " ]
       fs_source = unlines
-        [ "#version 420 core                             "
+        [ "#version 430 core                             "
         , "                                              "
         , "out vec4 color;                               "
         , "                                              "
@@ -38,13 +38,13 @@ startup state = do
   program <- createProgram
   programRef state $= program
 
-  fs <- createShader FragmentShader
-  shaderSourceBS fs $= packUtf8 fs_source
-  compileShader fs
-
   vs <- createShader VertexShader
   shaderSourceBS vs $= packUtf8 vs_source
   compileShader vs
+
+  fs <- createShader FragmentShader
+  shaderSourceBS fs $= packUtf8 fs_source
+  compileShader fs
 
   attachShader program vs
   attachShader program fs
@@ -65,6 +65,7 @@ render state currentTime = do
 
   p <- get (programRef state)
   currentProgram $= Just p
+
   pointSize $= 40
   drawArrays Points 0 1
 
