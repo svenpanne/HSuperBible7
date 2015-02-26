@@ -1,3 +1,6 @@
+-- SinglePoint.hs, see listing ??? in the OpenGL SuperBible, 6th ed.
+-- Adapted from singlepoint.cpp which is (c) 2012-2013 Graham Sellers.
+
 module Main ( main ) where
 
 import Data.IORef ( IORef, newIORef )
@@ -56,6 +59,7 @@ render :: State -> Double -> IO ()
 render state _currentTime = do
   withArray [ 1, 0, 0, 1 ] $
     glClearBufferfv gl_COLOR 0
+
   p <- get (programRef state)
   currentProgram $= Just p
   pointSize $= 40

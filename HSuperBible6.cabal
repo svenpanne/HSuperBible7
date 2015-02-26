@@ -49,6 +49,13 @@ executable SinglePoint
   default-language: Haskell2010
   ghc-options: -Wall
 
+executable SingleTri
+  main-is: SingleTri.hs
+  build-depends: base >= 3 && < 5, HSuperBible6, OpenGL, OpenGLRaw
+  hs-source-dirs: src/SingleTri
+  default-language: Haskell2010
+  ghc-options: -Wall
+
 source-repository head
   type: git
   location: https://github.com/svenpanne/HSuperBible6.git

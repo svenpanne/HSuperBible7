@@ -122,7 +122,7 @@ run theApp = do
       initialWindowSize $= SB6.windowSize theAppInfo
       void . createWindow . title $ theAppInfo
   unless (SB6.cursor theAppInfo) (GLUT.cursor $= None)
-  when (vsync theAppInfo) (swapInterval 1)
+  swapInterval $ if vsync theAppInfo then 1 else 0
   displayCallback $= displayCB theApp startTime
   closeCallback $= Just (closeCB theApp)
   reshapeCallback $= Just (onResize theApp)
