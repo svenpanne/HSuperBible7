@@ -17,7 +17,7 @@ flag debug
 library
   exposed-modules:
     SB6
-  build-depends: base >= 3 && < 5, bytestring, text, time, GLUT, OpenGLRaw
+  build-depends: base >= 3 && < 5, time, GLUT, OpenGLRaw
   hs-source-dirs: src/SB6
   default-language: Haskell2010
   ghc-options: -Wall
@@ -44,28 +44,28 @@ executable SimpleClear
 
 executable SinglePoint
   main-is: SinglePoint.hs
-  build-depends: base >= 3 && < 5, HSuperBible6, OpenGL, OpenGLRaw
+  build-depends: base >= 3 && < 5, HSuperBible6, OpenGL >= 2.11, OpenGLRaw
   hs-source-dirs: src/SinglePoint
   default-language: Haskell2010
   ghc-options: -Wall
 
 executable SingleTri
   main-is: SingleTri.hs
-  build-depends: base >= 3 && < 5, HSuperBible6, OpenGL, OpenGLRaw
+  build-depends: base >= 3 && < 5, HSuperBible6, OpenGL >= 2.11, OpenGLRaw
   hs-source-dirs: src/SingleTri
   default-language: Haskell2010
   ghc-options: -Wall
 
 executable MovingTri
   main-is: MovingTri.hs
-  build-depends: base >= 3 && < 5, HSuperBible6, OpenGL, OpenGLRaw
+  build-depends: base >= 3 && < 5, HSuperBible6, OpenGL >= 2.11, OpenGLRaw
   hs-source-dirs: src/MovingTri
   default-language: Haskell2010
   ghc-options: -Wall
 
 executable TessellatedTri
   main-is: TessellatedTri.hs
-  build-depends: base >= 3 && < 5, HSuperBible6, OpenGL, OpenGLRaw
+  build-depends: base >= 3 && < 5, HSuperBible6, OpenGL >= 2.11, OpenGLRaw
   hs-source-dirs: src/TessellatedTri
   default-language: Haskell2010
   ghc-options: -Wall

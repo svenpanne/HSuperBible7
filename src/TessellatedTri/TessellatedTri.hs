@@ -6,7 +6,7 @@ module Main ( main ) where
 import Data.IORef ( IORef, newIORef )
 import Foreign.Marshal.Array ( withArray )
 import Graphics.Rendering.OpenGL
-import Graphics.Rendering.OpenGL.Raw.Core43 ( glClearBufferfv, gl_COLOR, glDrawArrays, gl_PATCHES )
+import Graphics.Rendering.OpenGL.Raw.Core43 ( glClearBufferfv, gl_COLOR )
 import SB6
 
 data State = State
@@ -105,7 +105,7 @@ render state _currentTime = do
 
   p <- get (programRef state)
   currentProgram $= Just p
-  glDrawArrays gl_PATCHES 0 3
+  drawArrays Patches 0 3
 
 shutdown :: State -> IO ()
 shutdown state = do
