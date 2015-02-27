@@ -1,4 +1,4 @@
--- MovingTri.hs, see listings 3.1 - 3.2 the OpenGL SuperBible, 6th ed.
+-- MovingTri.hs, see listings 3.1 - 3.2 in the OpenGL SuperBible, 6th ed.
 -- Adapted from movingtri.cpp which is (c) 2012-2013 Graham Sellers.
 
 module Main ( main ) where

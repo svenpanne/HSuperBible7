@@ -1,4 +1,4 @@
--- SingleTri.hs, see listings 2.8 - 2.9 the OpenGL SuperBible, 6th ed.
+-- SingleTri.hs, see listings 2.8 - 2.9 in the OpenGL SuperBible, 6th ed.
 -- Adapted from singletri.cpp which is (c) 2012-2013 Graham Sellers.
 
 module Main ( main ) where

@@ -1,4 +1,4 @@
--- TessellatedTri.hs, see listings 3.7 - 3.8 the OpenGL SuperBible, 6th ed.
+-- TessellatedTri.hs, see listings 3.7 - 3.8 in the OpenGL SuperBible, 6th ed.
 -- Adapted from tessellatedtri.cpp which is (c) 2012-2013 Graham Sellers.
 
 module Main ( main ) where

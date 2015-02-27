@@ -1,4 +1,4 @@
--- TessellatedTri.hs, see listings ??? - ??? the OpenGL SuperBible, 6th ed.
+-- TessellatedTri.hs, see listing 3.9 in the OpenGL SuperBible, 6th ed.
 -- Adapted from tessellatedtri.cpp which is (c) 2012-2013 Graham Sellers.
 
 module Main ( main ) where
@@ -121,7 +121,7 @@ render state _currentTime = do
   p <- get (programRef state)
   currentProgram $= Just p
 
-  pointSize $= 0.5
+  pointSize $= 5
   drawArrays Patches 0 3
 
 shutdown :: State -> IO ()
