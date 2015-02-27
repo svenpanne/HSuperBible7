@@ -1,4 +1,4 @@
--- TessellatedTri.hs, see listings 3.7 - 3.8 the OpenGL SuperBible, 6th ed.
+-- TessellatedTri.hs, see listings ??? - ??? the OpenGL SuperBible, 6th ed.
 -- Adapted from tessellatedtri.cpp which is (c) 2012-2013 Graham Sellers.
 
 module Main ( main ) where
@@ -14,7 +14,7 @@ data State = State
   , vaoRef :: IORef VertexArrayObject }
 
 init :: IO AppInfo
-init = return $ appInfo { title = "OpenGL SuperBible - Tessellated Triangle" }
+init = return $ appInfo { title = "OpenGL SuperBible - Tessellation and Geometry Shaders" }
 
 startup :: State -> IO ()
 startup state = do
@@ -56,6 +56,22 @@ startup state = do
         , "                  (gl_TessCoord.y * gl_in[1].gl_Position) +                       "
         , "                  (gl_TessCoord.z * gl_in[2].gl_Position);                        "
         , "}                                                                                 " ]
+      gs_source = unlines
+        [ "#version 430 core                                                                 "
+        , "                                                                                  "
+        , "layout (triangles) in;                                                            "
+        , "layout (points, max_vertices = 3) out;                                            "
+        , "                                                                                  "
+        , "void main(void)                                                                   "
+        , "{                                                                                 "
+        , "    int i;                                                                        "
+        , "                                                                                  "
+        , "    for (i = 0; i < gl_in.length(); i++)                                          "
+        , "    {                                                                             "
+        , "        gl_Position = gl_in[i].gl_Position;                                       "
+        , "        EmitVertex();                                                             "
+        , "    }                                                                             "
+        , "}                                                                                 " ]
       fs_source = unlines
         [ "#version 430 core                                                 "
         , "                                                                  "
@@ -81,19 +97,21 @@ startup state = do
   shaderSourceBS tes $= packUtf8 tes_source
   compileShader tes
 
+  gs <- createShader GeometryShader
+  shaderSourceBS gs $= packUtf8 gs_source
+  compileShader gs
+
   fs <- createShader FragmentShader
   shaderSourceBS fs $= packUtf8 fs_source
   compileShader fs
 
-  mapM_ (attachShader program) [vs, tcs, tes, fs]
+  mapM_ (attachShader program) [vs, tcs, tes, gs, fs]
   linkProgram program
-  deleteObjectNames [vs, tcs, tes, fs]
+  deleteObjectNames [vs, tcs, tes, gs, fs]
 
   vao <- genObjectName
   vaoRef state $= vao
   bindVertexArrayObject $= Just vao
-
-  polygonMode $= (Line, Line)
 
 render :: State -> Double -> IO ()
 render state _currentTime = do
@@ -103,6 +121,7 @@ render state _currentTime = do
   p <- get (programRef state)
   currentProgram $= Just p
 
+  pointSize $= 0.5
   drawArrays Patches 0 3
 
 shutdown :: State -> IO ()

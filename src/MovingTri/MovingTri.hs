@@ -54,10 +54,9 @@ startup state = do
   shaderSourceBS fs $= packUtf8 fs_source
   compileShader fs
 
-  attachShader program vs
-  attachShader program fs
-
+  mapM_ (attachShader program) [vs, fs]
   linkProgram program
+  deleteObjectNames [vs, fs]
 
   vao <- genObjectName
   vaoRef state $= vao
@@ -79,7 +78,6 @@ render state currentTime = do
             , 0
             , 0 ] $
     glVertexAttrib4fv 0
-
   drawArrays Triangles 0 3
 
 shutdown :: State -> IO ()
