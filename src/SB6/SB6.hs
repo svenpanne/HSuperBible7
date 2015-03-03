@@ -19,7 +19,7 @@ import System.Exit ( exitSuccess )
 import System.IO ( hPutStrLn, stderr )
 
 import Graphics.UI.GLUT as GLUT
-import Graphics.Rendering.OpenGL.Raw
+import Graphics.Rendering.OpenGL.Raw ( getProcAddress )
 
 --------------------------------------------------------------------------------
 
@@ -32,8 +32,7 @@ data Application = Application
   , onKey :: Either SpecialKey Char -> KeyState -> IO ()
   , onMouseButton :: MouseButton -> KeyState -> IO ()
   , onMouseMove :: Position -> IO ()
-  , onDebugMessage ::
-      DebugSource -> DebugType -> Integer -> DebugSeverity -> String -> IO ()
+  , onDebugMessage :: DebugMessage -> IO ()
   }
 
 app :: Application
@@ -47,7 +46,8 @@ app = Application
   , onMouseButton = \_mouseButton _keyState -> return ()
   , onMouseMove = \_position -> return ()
   , onDebugMessage =
-      \_source _typ _ident _severity message -> hPutStrLn stderr message
+      \(DebugMessage _source _typ _ident _severity message) ->
+        hPutStrLn stderr message
   }
 
 --------------------------------------------------------------------------------
@@ -127,18 +127,8 @@ run theApp = do
   passiveMotionCallback $= Just (onMouseMove theApp)
 
   when (debug theAppInfo) $ do
-    v <- get (majorMinor glVersion)
-    if v >= (4, 3)
-      then do
-        cb <- makeGLDEBUGPROC (debugCB theApp)
-        glDebugMessageCallback cb nullPtr
-        glEnable gl_DEBUG_OUTPUT_SYNCHRONOUS
-      else do
-        funPtr <- getProcAddress "glDebugMessageCallbackARB"
-        unless (funPtr == nullFunPtr) $ do
-          cb <- makeGLDEBUGPROC (debugCB theApp)
-          glDebugMessageCallbackARB cb nullPtr
-          glEnable gl_DEBUG_OUTPUT_SYNCHRONOUS_ARB
+    debugMessageCallback $= Just (onDebugMessage theApp)
+    debugOutputSynchronous $= Enabled
 
 #if DEBUG
   forM_ [ ("VENDOR", vendor),
@@ -150,16 +140,6 @@ run theApp = do
   startup theApp
   ifFreeGLUT (actionOnWindowClose $= MainLoopReturns) (return ())
   mainLoop
-
-debugCB :: Application -> GLDEBUGPROCFunc
-debugCB theApp source typ ident severity len message _userParam = do
-  msg <- peekCStringLen (message, fromIntegral len)
-  onDebugMessage theApp
-    (unmarshalDebugSource source)
-    (unmarshalDebugType typ)
-    (fromIntegral ident)
-    (unmarshalDebugSeverity severity)
-    msg
 
 displayCB :: Application -> UTCTime -> DisplayCallback
 displayCB theApp startTime = do
@@ -217,68 +197,3 @@ foreign import CALLCONV "dynamic" makeSwapInterval
   :: FunPtr (CInt -> IO CInt)
   ->         CInt -> IO CInt
 #endif
-
---------------------------------------------------------------------------------
-
-data DebugSource =
-    DebugSourceAPI
-  | DebugSourceWindowSystem
-  | DebugSourceShaderCompiler
-  | DebugSourceThirdParty
-  | DebugSourceApplication
-  | DebugSourceOther
-  deriving ( Eq, Ord, Show )
-
-unmarshalDebugSource :: GLenum -> DebugSource
-unmarshalDebugSource x
-  | x == gl_DEBUG_SOURCE_API = DebugSourceAPI
-  | x == gl_DEBUG_SOURCE_WINDOW_SYSTEM = DebugSourceWindowSystem
-  | x == gl_DEBUG_SOURCE_SHADER_COMPILER = DebugSourceShaderCompiler
-  | x == gl_DEBUG_SOURCE_THIRD_PARTY = DebugSourceThirdParty
-  | x == gl_DEBUG_SOURCE_APPLICATION = DebugSourceApplication
-  | x == gl_DEBUG_SOURCE_OTHER = DebugSourceOther
-  | otherwise = error ("unmarshalDebugSource: illegal value " ++ show x)
-
---------------------------------------------------------------------------------
-
-data DebugType =
-    DebugTypeError
-  | DebugTypeDeprecatedBehavior
-  | DebugTypeUndefinedBehavior
-  | DebugTypePortability
-  | DebugTypePerformance
-  | DebugTypeOther
-  | DebugTypeMarker
-  | DebugTypePushGroup
-  | DebugTypePopGroup
-  deriving ( Eq, Ord, Show )
-
-unmarshalDebugType :: GLenum -> DebugType
-unmarshalDebugType x
-  | x == gl_DEBUG_TYPE_ERROR = DebugTypeError
-  | x == gl_DEBUG_TYPE_DEPRECATED_BEHAVIOR = DebugTypeDeprecatedBehavior
-  | x == gl_DEBUG_TYPE_UNDEFINED_BEHAVIOR = DebugTypeUndefinedBehavior
-  | x == gl_DEBUG_TYPE_PORTABILITY = DebugTypePortability
-  | x == gl_DEBUG_TYPE_PERFORMANCE = DebugTypePerformance
-  | x == gl_DEBUG_TYPE_OTHER = DebugTypeOther
-  | x == gl_DEBUG_TYPE_MARKER = DebugTypeMarker
-  | x == gl_DEBUG_TYPE_PUSH_GROUP = DebugTypePushGroup
-  | x == gl_DEBUG_TYPE_POP_GROUP = DebugTypePopGroup
-  | otherwise = error ("unmarshalDebugType: illegal value " ++ show x)
-
---------------------------------------------------------------------------------
-
-data DebugSeverity =
-    DebugSeverityHigh
-  | DebugSeverityMedium
-  | DebugSeverityLow
-  | DebugSeverityNotification
-  deriving ( Eq, Ord, Show )
-
-unmarshalDebugSeverity :: GLenum -> DebugSeverity
-unmarshalDebugSeverity x
-  | x == gl_DEBUG_SEVERITY_HIGH = DebugSeverityHigh
-  | x == gl_DEBUG_SEVERITY_MEDIUM = DebugSeverityMedium
-  | x == gl_DEBUG_SEVERITY_LOW = DebugSeverityLow
-  | x == gl_DEBUG_SEVERITY_NOTIFICATION = DebugSeverityNotification
-  | otherwise = error ("unmarshalDebugSeverity: illegal value " ++ show x)
