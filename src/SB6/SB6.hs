@@ -12,9 +12,8 @@ import Control.Monad ( forM_ )
 #endif
 import Data.List ( isPrefixOf )
 import Data.Time.Clock ( UTCTime, diffUTCTime, getCurrentTime )
-import Foreign.C.String ( peekCStringLen )
 import Foreign.C.Types
-import Foreign.Ptr ( nullPtr, FunPtr, nullFunPtr )
+import Foreign.Ptr ( FunPtr, nullFunPtr )
 import System.Exit ( exitSuccess )
 import System.IO ( hPutStrLn, stderr )
 
