@@ -18,7 +18,7 @@ All Haskell code is based on the C++ examples from the [OpenGL SuperBible](http:
 
 * [MovingTri.hs](src/MovingTri/MovingTri.hs): listings 3.1 - 3.2, [movingtri.cpp](https://github.com/openglsuperbible/sb6code/blob/master/src/movingtri/movingtri.cpp)
 * [TessellatedTri.hs](src/TessellatedTri/TessellatedTri.hs): listings 3.7 - 3.8, [tessellatedtri.cpp](https://github.com/openglsuperbible/sb6code/blob/master/src/tessellatedtri/tessellatedtri.cpp)
-* [TessellatedTri.hs](src/TessellatedTri/TessellatedTri.hs): listing 3.9, [tessellatedtri.cpp](https://github.com/openglsuperbible/sb6code/blob/master/src/tessellatedtri/tessellatedtri.cpp)
+* [TessellatedGSTri.hs](src/TessellatedGSTri/TessellatedGSTri.hs): listing 3.9, [tessellatedgstri.cpp](https://github.com/openglsuperbible/sb6code/blob/master/src/tessellatedgstri/tessellatedgstri.cpp)
 * [FragColorFromPos](src/FragColorFromPos/FragColorFromPos.hs): listings 3.10 - 3.12, [fragcolorfrompos.cpp](https://github.com/openglsuperbible/sb6code/blob/master/src/fragcolorfrompos/fragcolorfrompos.cpp)
 
 [![Build Status](https://travis-ci.org/svenpanne/HSuperBible6.png)](https://travis-ci.org/svenpanne/HSuperBible6)
