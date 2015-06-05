@@ -6,12 +6,13 @@ module Main ( main ) where
 import Data.IORef ( IORef, newIORef )
 import Foreign.Marshal.Array ( withArray )
 import Graphics.Rendering.OpenGL
-import Graphics.Rendering.OpenGL.Raw.Core43 ( glClearBufferfv, gl_COLOR )
+import Graphics.Rendering.OpenGL.Raw.Core41 ( glClearBufferfv, gl_COLOR )
 import SB6
 
 data State = State
   { programRef :: IORef Program
-  , vaoRef :: IORef VertexArrayObject }
+  , vaoRef :: IORef VertexArrayObject
+  }
 
 init :: IO AppInfo
 init = return $ appInfo { title = "OpenGL SuperBible - Tessellated Triangle" }
@@ -19,7 +20,7 @@ init = return $ appInfo { title = "OpenGL SuperBible - Tessellated Triangle" }
 startup :: State -> IO ()
 startup state = do
   let vs_source = unlines
-        [ "#version 430 core                                                 "
+        [ "#version 410 core                                                 "
         , "                                                                  "
         , "void main(void)                                                   "
         , "{                                                                 "
@@ -30,7 +31,7 @@ startup state = do
         , "    gl_Position = vertices[gl_VertexID];                          "
         , "}                                                                 " ]
       tcs_source = unlines
-        [ "#version 430 core                                                                 "
+        [ "#version 410 core                                                                 "
         , "                                                                                  "
         , "layout (vertices = 3) out;                                                        "
         , "                                                                                  "
@@ -46,7 +47,7 @@ startup state = do
         , "    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;     "
         , "}                                                                                 " ]
       tes_source = unlines
-        [ "#version 430 core                                                                 "
+        [ "#version 410 core                                                                 "
         , "                                                                                  "
         , "layout (triangles, equal_spacing, cw) in;                                         "
         , "                                                                                  "
@@ -57,7 +58,7 @@ startup state = do
         , "                  (gl_TessCoord.z * gl_in[2].gl_Position);                        "
         , "}                                                                                 " ]
       fs_source = unlines
-        [ "#version 430 core                                                 "
+        [ "#version 410 core                                                 "
         , "                                                                  "
         , "out vec4 color;                                                   "
         , "                                                                  "
@@ -68,7 +69,6 @@ startup state = do
 
   program <- createProgram
   programRef state $= program
-
   vs <- createShader VertexShader
   shaderSourceBS vs $= packUtf8 vs_source
   compileShader vs
@@ -85,9 +85,9 @@ startup state = do
   shaderSourceBS fs $= packUtf8 fs_source
   compileShader fs
 
-  mapM_ (attachShader program) [vs, tcs, tes, fs]
+  mapM_ (attachShader program) [ vs, tcs, tes, fs ]
+
   linkProgram program
-  deleteObjectNames [vs, tcs, tes, fs]
 
   vao <- genObjectName
   vaoRef state $= vao

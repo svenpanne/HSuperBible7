@@ -1,6 +1,6 @@
 ## Disclaimer
 
-All Haskell code is based on the C++ examples from the [OpenGL SuperBible](http://www.openglsuperbible.com/) (6th ed.), which are available on [GitHub](https://github.com/openglsuperbible/sb6code). Their original copyright is (c) 2012-2013 Graham Sellers.
+All Haskell code is based on the C++ examples from the [OpenGL SuperBible](http://www.openglsuperbible.com/) (6th ed.), which are available [on GitHub](https://github.com/openglsuperbible/sb6code). Their original copyright is (c) 2012-2013 Graham Sellers.
 
 ## File Organization
 
@@ -10,7 +10,7 @@ All Haskell code is based on the C++ examples from the [OpenGL SuperBible](http:
 
 ### Chapter 2: Our First OpenGL Program
 
-* [SimpleClear.hs](src/SimpleClear/SimpleClear.hs): listings 2.1 - 2.2, [simpleclear.cpp](https://github.com/openglsuperbible/sb6code/blob/master/src/simpleclear/simpleclear.cpp)
+* [SimpleClear.hs](src/SimpleClear/SimpleClear.hs): listing 2.1, [simpleclear.cpp](https://github.com/openglsuperbible/sb6code/blob/master/src/simpleclear/simpleclear.cpp)
 * [SinglePoint.hs](src/SinglePoint/SinglePoint.hs): listings 2.3 - 2.7, [singlepoint.cpp](https://github.com/openglsuperbible/sb6code/blob/master/src/singlepoint/singlepoint.cpp)
 * [SingleTri.hs](src/SingleTri/SingleTri.hs): listings 2.8 - 2.9, [singletri.cpp](https://github.com/openglsuperbible/sb6code/blob/master/src/singletri/singletri.cpp)
 

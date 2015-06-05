@@ -6,12 +6,13 @@ module Main ( main ) where
 import Data.IORef ( IORef, newIORef )
 import Foreign.Marshal.Array ( withArray )
 import Graphics.Rendering.OpenGL
-import Graphics.Rendering.OpenGL.Raw.Core43 ( glClearBufferfv, gl_COLOR )
+import Graphics.Rendering.OpenGL.Raw.Core42 ( glClearBufferfv, gl_COLOR )
 import SB6
 
 data State = State
   { programRef :: IORef Program
-  , vaoRef :: IORef VertexArrayObject }
+  , vaoRef :: IORef VertexArrayObject
+  }
 
 init :: IO AppInfo
 init = return $ appInfo { title = "OpenGL SuperBible - Single Triangle" }
@@ -19,7 +20,7 @@ init = return $ appInfo { title = "OpenGL SuperBible - Single Triangle" }
 startup :: State -> IO ()
 startup state = do
   let vs_source = unlines
-        [ "#version 430 core                                                 "
+        [ "#version 420 core                                                 "
         , "                                                                  "
         , "void main(void)                                                   "
         , "{                                                                 "
@@ -30,7 +31,7 @@ startup state = do
         , "    gl_Position = vertices[gl_VertexID];                          "
         , "}                                                                 " ]
       fs_source = unlines
-        [ "#version 430 core                                                 "
+        [ "#version 420 core                                                 "
         , "                                                                  "
         , "out vec4 color;                                                   "
         , "                                                                  "
@@ -41,18 +42,17 @@ startup state = do
 
   program <- createProgram
   programRef state $= program
+  fs <- createShader FragmentShader
+  shaderSourceBS fs $= packUtf8 fs_source
+  compileShader fs
 
   vs <- createShader VertexShader
   shaderSourceBS vs $= packUtf8 vs_source
   compileShader vs
 
-  fs <- createShader FragmentShader
-  shaderSourceBS fs $= packUtf8 fs_source
-  compileShader fs
+  mapM_ (attachShader program) [ vs, fs ]
 
-  mapM_ (attachShader program) [vs, fs]
   linkProgram program
-  deleteObjectNames [vs, fs]
 
   vao <- genObjectName
   vaoRef state $= vao
@@ -65,7 +65,6 @@ render state _currentTime = do
 
   p <- get (programRef state)
   currentProgram $= Just p
-
   drawArrays Triangles 0 3
 
 shutdown :: State -> IO ()
