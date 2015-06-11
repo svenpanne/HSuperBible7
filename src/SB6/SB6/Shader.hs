@@ -3,21 +3,21 @@ module SB6.Shader (
   linkFromShaders
 ) where
 
-import Control.Exception as C
-import Control.Monad as M
+import Control.Exception ( bracketOnError )
+import Control.Monad ( unless )
 import qualified Data.ByteString as B
 import Graphics.Rendering.OpenGL
 
 load :: FilePath -> ShaderType -> IO Shader
-load fileName shaderType=
-  createShader shaderType `C.bracketOnError` deleteObjectName $ \shader -> do
+load fileName shType =
+  createShader shType `bracketOnError` deleteObjectName $ \shader -> do
     src <- B.readFile fileName
     shaderSourceBS shader $= src
     checked compileShader compileStatus shaderInfoLog (fileName ++ ": ") shader
 
 linkFromShaders :: [Shader] -> IO Program
 linkFromShaders shaders =
-  createProgram `C.bracketOnError` deleteObjectName $ \program -> do
+  createProgram `bracketOnError` deleteObjectName $ \program -> do
     mapM_ (\s -> do attachShader program s; deleteObjectName s) shaders
     checked linkProgram linkStatus programInfoLog "" program
 
@@ -30,7 +30,7 @@ checked :: (t -> IO ())
 checked action getStatus getInfoLog messagePrefix object = do
   action object
   ok <- get (getStatus object)
-  M.unless ok $ do
+  unless ok $ do
     infoLog <- get (getInfoLog object)
     fail $ messagePrefix ++ infoLog
   return object
