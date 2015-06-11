@@ -1,5 +1,5 @@
 {-# LANGUAGE CPP #-}
-module SB6 (
+module SB6.Application (
   Application(..), app,
   AppInfo(..), appInfo,
   run
@@ -35,7 +35,7 @@ data Application = Application
 
 app :: Application
 app = Application
-  { SB6.init = return appInfo
+  { SB6.Application.init = return appInfo
   , startup = return ()
   , render = \_currentTime -> return ()
   , shutdown = return ()
@@ -65,17 +65,17 @@ data AppInfo = AppInfo
 appInfo :: AppInfo
 appInfo = AppInfo
   { title = "SuperBible6 Example"
-  ,  SB6.windowSize  = Size 800 600
+  ,  SB6.Application.windowSize  = Size 800 600
 #if OS_DARWIN
   , version = (3, 2)
 #else
   , version = (4, 3)
 #endif
-  , SB6.samples = 0
+  , SB6.Application.samples = 0
   , fullscreen  = False
   , vsync  = False
-  , SB6.cursor  = True
-  , SB6.stereo  = False
+  , SB6.Application.cursor  = True
+  , SB6.Application.stereo  = False
 #if DEBUG
   , debug  = True
 #else
@@ -89,15 +89,15 @@ run :: Application -> IO ()
 run theApp = do
   startTime <- getCurrentTime
   void getArgsAndInitialize
-  theAppInfo <- SB6.init theApp
+  theAppInfo <- SB6.Application.init theApp
   let numOpt f fld = opt (f . fromIntegral . fld $ theAppInfo) ((> 0) . fld)
       opt val predicate = if predicate theAppInfo then [ val ] else []
       width (Size w _) = w
       height (Size _ h) = h
   initialDisplayMode $=
     [ RGBAMode, WithDepthBuffer, DoubleBuffered ] ++
-    numOpt WithSamplesPerPixel SB6.samples ++
-    opt Stereoscopic SB6.stereo
+    numOpt WithSamplesPerPixel SB6.Application.samples ++
+    opt Stereoscopic SB6.Application.stereo
   initialContextVersion $= version theAppInfo
   initialContextProfile $= [ CoreProfile ]
   initialContextFlags $= [ ForwardCompatibleContext ]
@@ -108,14 +108,14 @@ run theApp = do
     then do
       gameModeCapabilities $=
         [ Where' GameModeBitsPerPlane IsEqualTo 32 ] ++
-        numOpt (Where' GameModeWidth IsEqualTo) (width . SB6.windowSize) ++
-        numOpt (Where' GameModeHeight IsEqualTo) (height . SB6.windowSize)
+        numOpt (Where' GameModeWidth IsEqualTo) (width . SB6.Application.windowSize) ++
+        numOpt (Where' GameModeHeight IsEqualTo) (height . SB6.Application.windowSize)
       void enterGameMode
       windowTitle $= title theAppInfo
     else do
-      initialWindowSize $= SB6.windowSize theAppInfo
+      initialWindowSize $= SB6.Application.windowSize theAppInfo
       void . createWindow . title $ theAppInfo
-  unless (SB6.cursor theAppInfo) (GLUT.cursor $= None)
+  unless (SB6.Application.cursor theAppInfo) (GLUT.cursor $= None)
   swapInterval $ if vsync theAppInfo then 1 else 0
   displayCallback $= displayCB theApp startTime
   closeCallback $= Just (closeCB theApp)

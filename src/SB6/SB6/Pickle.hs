@@ -1,4 +1,4 @@
-module Pickle (
+module SB6.Pickle (
   -- * The Pickler\/Unpickler itself
   PU, puLift, puSeq,
 
