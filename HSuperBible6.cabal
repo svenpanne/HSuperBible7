@@ -16,8 +16,8 @@ flag debug
 
 library
   exposed-modules:
-    Pickle
-    SB6
+    SB6.Application
+    SB6.Pickle
   build-depends:
     base       >= 3   && < 5,
     binary     >= 0.6 && < 0.8,
