@@ -2,8 +2,7 @@
 module SB6 (
   Application(..), app,
   AppInfo(..), appInfo,
-  run,
-  DebugSource(..), DebugType(..), DebugSeverity(..),
+  run
 ) where
 
 import Control.Monad ( when, unless, void )
