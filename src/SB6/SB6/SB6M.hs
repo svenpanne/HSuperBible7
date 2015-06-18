@@ -28,7 +28,7 @@ data SB6M a = SB6M
   } deriving ( Eq, Ord, Show )
 
 parseSB6M :: BS.ByteString -> SB6M a
-parseSB6M input = runGet (getSB6M input) $ BL.fromStrict input
+parseSB6M input = runGet (getSB6M input) $ BL.fromChunks [input]
 
 getSB6M :: BS.ByteString -> Get (SB6M a)
 getSB6M bs = do
