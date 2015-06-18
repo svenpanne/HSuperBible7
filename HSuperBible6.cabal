@@ -18,7 +18,7 @@ library
   exposed-modules:
     SB6
     SB6.Application
-    SB6.Pickle
+    SB6.SB6M
     SB6.Shader
   build-depends:
     base       >= 3   && < 5,
@@ -26,7 +26,7 @@ library
     bytestring >= 0.9 && < 0.11,
     time,
     GLUT,
-    OpenGL >= 2.11.1,
+    OpenGL     >= 2.11.1,
     OpenGLRaw
   hs-source-dirs: src/SB6
   default-language: Haskell2010
