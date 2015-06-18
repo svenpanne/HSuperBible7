@@ -60,7 +60,7 @@ data AppInfo = AppInfo
   , cursor :: Bool
   , stereo :: Bool
   , debug :: Bool
-  }
+  } deriving ( Eq, Ord, Show )
 
 appInfo :: AppInfo
 appInfo = AppInfo
