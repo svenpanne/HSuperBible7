@@ -1,29 +1,36 @@
 module SB6.SB6M (
-  SB6M(..), getSB6M,
+  SB6M(..), parseSB6M,
   VertexData(..),
-  VertexAttribData(..), VertexAttribFlags(..),
+  VertexAttribData(..),
   IndexData(..),
   SubObject(..)
 ) where
 
 import Control.Applicative( (<$>), (<*>) )
 import qualified Control.Monad as M
-import Data.Binary.Get ( Get, getByteString, bytesRead, skip, getWord32le )
+import Data.Binary.Get ( Get, runGet, getByteString, bytesRead, skip,
+                         getWord32le )
 import Data.Bits ( (.|.), testBit, shift )
 import qualified Data.ByteString as BS
-import qualified Graphics.Rendering.OpenGL as GL
+import qualified Data.ByteString.Lazy as BL
+import Foreign.Ptr ( Ptr, nullPtr, plusPtr )
+import Graphics.Rendering.OpenGL
+import Graphics.Rendering.OpenGL.Raw
 
 --------------------------------------------------------------------------------
 
-data SB6M = SB6M
+data SB6M a = SB6M
   { vertexData :: VertexData
-  , vertexAttribData :: [VertexAttribData]
+  , vertexAttribData :: [VertexAttribData a]
   , indexData :: Maybe IndexData
   , subObjectList :: [SubObject]
   , rawData :: BS.ByteString  -- ^ contains little-endian data
   } deriving ( Eq, Ord, Show )
 
-getSB6M :: BS.ByteString -> Get SB6M
+parseSB6M :: BS.ByteString -> SB6M a
+parseSB6M input = runGet (getSB6M input) $ BL.fromStrict input
+
+getSB6M :: BS.ByteString -> Get (SB6M a)
 getSB6M bs = do
   bodies <- getList getNumChunks getChunk
   let vd = one "vertex data" [ b | VertexDataChunk b <- bodies ]
@@ -55,7 +62,7 @@ getNumChunks = nc <$> getChunk
 
 --------------------------------------------------------------------------------
 
-getChunk :: Get Chunk
+getChunk :: Get (Chunk a)
 getChunk = do
   x <- bytesRead
   h <- getChunkHeader
@@ -103,16 +110,16 @@ getChunkType = unmarshalChunkType <$> getWord32le
 
 --------------------------------------------------------------------------------
 
-data Chunk
+data Chunk a
   = FileHeaderChunk FileHeader
   | IndexDataChunk IndexData
   | VertexDataChunk VertexData
-  | VertexAttrib [VertexAttribData]
+  | VertexAttrib [VertexAttribData a]
   | Comment BS.ByteString
   | SubObjectList [SubObject]
   deriving ( Eq, Ord, Show )
 
-getChunkBody :: ChunkHeader -> Get Chunk
+getChunkBody :: ChunkHeader -> Get (Chunk a)
 getChunkBody h = do
   let n = chunkSizeWithoutHeader h
   case chunkType h of
@@ -137,20 +144,20 @@ getFileHeader = FileHeader <$> getNum32le <*> getNum32le
 --------------------------------------------------------------------------------
 
 data IndexData = IndexData
-  { indexType :: GL.GLenum
-  , indexCount :: GL.GLsizei
+  { indexType :: DataType
+  , indexCount :: GLsizei
   , indexDataOffset :: Int
   } deriving ( Eq, Ord, Show )
 
 getIndexData :: Get IndexData
-getIndexData = IndexData <$> getNum32le <*> getNum32le <*> getNum32le
+getIndexData = IndexData <$> getDataType <*> getNum32le <*> getNum32le
 
 --------------------------------------------------------------------------------
 
 data VertexData = VertexData
-  { dataSize :: GL.GLsizeiptr
+  { dataSize :: GLsizeiptr
   , dataOffset :: Int
-  , totalVertices :: GL.GLsizei
+  , totalVertices :: GLsizei
   } deriving ( Eq, Ord, Show )
 
 getVertexData :: Get VertexData
@@ -158,36 +165,42 @@ getVertexData = VertexData <$> getNum32le <*> getNum32le <*> getNum32le
 
 --------------------------------------------------------------------------------
 
-data VertexAttribData = VertexAttribData
+data VertexAttribData a = VertexAttribData
   { attribName :: String
-  , attribSize :: GL.GLint
-  , attribType :: GL.GLenum
-  , attribStride :: GL.GLsizei
-  , attribFlags :: VertexAttribFlags
-  , attribDataOffset :: Int
+  , attribDescriptor :: VertexArrayDescriptor a
+  , attribIntegerHandling :: IntegerHandling
   } deriving ( Eq, Ord, Show )
 
-getVertexAttribData :: Get VertexAttribData
-getVertexAttribData =
-  VertexAttribData <$> getCStringFixed 64 <*> getNum32le <*> getNum32le <*>
-                       getNum32le <*> getVertexAttribFlags <*> getNum32le
+getVertexAttribData :: Get (VertexAttribData a)
+getVertexAttribData = do
+  n <- getCStringFixed 64
+  s <- getNum32le
+  t <- getDataType
+  r <- getNum32le
+  i <- getIntegerHandling
+  o <- getBufferOffset
+  return $ VertexAttribData
+    { attribName = n
+    , attribDescriptor = VertexArrayDescriptor s t r o
+    , attribIntegerHandling = i }
 
---------------------------------------------------------------------------------
+getDataType :: Get DataType
+getDataType = unmarshalDataType <$> getNum32le
 
-data VertexAttribFlags = VertexAttribFlags
-  { isNormalized :: Bool
-  , isInteger :: Bool
-  } deriving ( Eq, Ord, Show )
+getBufferOffset :: Get (Ptr a)
+getBufferOffset = plusPtr nullPtr . fromIntegral <$> getWord32le
 
-getVertexAttribFlags :: Get VertexAttribFlags
-getVertexAttribFlags = v <$> getWord32le
-  where v f = VertexAttribFlags (f `testBit` 0) (f `testBit` 1)
+getIntegerHandling :: Get IntegerHandling
+getIntegerHandling = v <$> getWord32le
+  where v f | f `testBit` 1 = KeepIntegral
+            | f `testBit` 0 = ToNormalizedFloat
+            | otherwise     = ToFloat
 
 --------------------------------------------------------------------------------
 
 data SubObject = SubObject
-  { first :: GL.GLint
-  , count :: GL.GLsizei
+  { first :: GLint
+  , count :: GLsizei
   } deriving ( Eq, Ord, Show )
 
 getSubObject :: Get SubObject
@@ -205,4 +218,42 @@ getNum32le :: Num a => Get a
 getNum32le = fromIntegral <$> getWord32le
 
 getCStringFixed :: Int -> Get String
-getCStringFixed n = (GL.unpackUtf8 . BS.takeWhile (/= 0)) <$> getByteString n
+getCStringFixed n = (unpackUtf8 . BS.takeWhile (/= 0)) <$> getByteString n
+
+--------------------------------------------------------------------------------
+-- TODO: Should we export this (and marshalDataType) from OpenGL?
+
+unmarshalDataType :: GLenum -> DataType
+unmarshalDataType x
+   | x == gl_UNSIGNED_BYTE = UnsignedByte
+   | x == gl_BYTE = Byte
+   | x == gl_UNSIGNED_SHORT = UnsignedShort
+   | x == gl_SHORT = Short
+   | x == gl_UNSIGNED_INT = UnsignedInt
+   | x == gl_INT = Int
+   | x == gl_HALF_FLOAT = HalfFloat
+   | x == gl_FLOAT = Float
+   | x == gl_UNSIGNED_BYTE_3_3_2 = UnsignedByte332
+   | x == gl_UNSIGNED_BYTE_2_3_3_REV = UnsignedByte233Rev
+   | x == gl_UNSIGNED_SHORT_5_6_5 = UnsignedShort565
+   | x == gl_UNSIGNED_SHORT_5_6_5_REV = UnsignedShort565Rev
+   | x == gl_UNSIGNED_SHORT_4_4_4_4 = UnsignedShort4444
+   | x == gl_UNSIGNED_SHORT_4_4_4_4_REV = UnsignedShort4444Rev
+   | x == gl_UNSIGNED_SHORT_5_5_5_1 = UnsignedShort5551
+   | x == gl_UNSIGNED_SHORT_1_5_5_5_REV = UnsignedShort1555Rev
+   | x == gl_UNSIGNED_INT_8_8_8_8 = UnsignedInt8888
+   | x == gl_UNSIGNED_INT_8_8_8_8_REV = UnsignedInt8888Rev
+   | x == gl_UNSIGNED_INT_10_10_10_2 = UnsignedInt1010102
+   | x == gl_UNSIGNED_INT_2_10_10_10_REV = UnsignedInt2101010Rev
+   | x == gl_UNSIGNED_INT_24_8 = UnsignedInt248
+   | x == gl_UNSIGNED_INT_10F_11F_11F_REV = UnsignedInt10f11f11fRev
+   | x == gl_UNSIGNED_INT_5_9_9_9_REV = UnsignedInt5999Rev
+   | x == gl_FLOAT_32_UNSIGNED_INT_24_8_REV = Float32UnsignedInt248Rev
+   | x == gl_BITMAP = Bitmap
+   | x == gl_UNSIGNED_SHORT_8_8_APPLE = UnsignedShort88
+   | x == gl_UNSIGNED_SHORT_8_8_REV_APPLE = UnsignedShort88Rev
+   | x == gl_DOUBLE = Double
+   | x == gl_2_BYTES = TwoBytes
+   | x == gl_3_BYTES = ThreeBytes
+   | x == gl_4_BYTES = FourBytes
+   | otherwise = error ("unmarshalDataType: illegal value " ++ show x)

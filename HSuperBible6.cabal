@@ -18,6 +18,7 @@ library
   exposed-modules:
     SB6
     SB6.Application
+    SB6.Object
     SB6.SB6M
     SB6.Shader
   build-depends:
