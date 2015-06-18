@@ -7,6 +7,9 @@ module SB6.Pickle (
 
   -- * Combinators
 
+  -- * Lists
+  puFixedList,
+
   -- ** Tuples
   puPair, puTriple, pu4Tuple, pu5Tuple, pu6Tuple, pu7Tuple, pu8Tuple,
 
@@ -86,6 +89,15 @@ runPickler p = runPut . pickle p
 
 runUnpickler :: PU a -> BL.ByteString -> a
 runUnpickler p = runGet $ unpickle p
+
+--------------------------------------------------------------------------------
+
+puFixedList :: Integral b => PU a -> b -> PU [a]
+puFixedList _ 0 = puLift []
+puFixedList p n =
+  puWrap (\(a, b) -> a : b,
+          \(a : b) -> (a, b)) $
+  puPair p (puFixedList p (n - 1))
 
 --------------------------------------------------------------------------------
 
