@@ -21,30 +21,30 @@ import Graphics.Rendering.OpenGL.Raw ( getProcAddress )
 
 --------------------------------------------------------------------------------
 
-data Application = Application
+data Application s = Application
   { init :: IO AppInfo
-  , startup :: IO ()
-  , render :: Double -> IO ()
-  , shutdown :: IO ()
-  , onResize :: Size -> IO ()
-  , onKey :: Either SpecialKey Char -> KeyState -> IO ()
-  , onMouseButton :: MouseButton -> KeyState -> IO ()
-  , onMouseMove :: Position -> IO ()
-  , onDebugMessage :: DebugMessage -> IO ()
+  , startup :: IO s
+  , render :: s -> Double -> IO ()
+  , shutdown :: s -> IO ()
+  , onResize :: s -> Size -> IO ()
+  , onKey :: s -> Either SpecialKey Char -> KeyState -> IO ()
+  , onMouseButton :: s -> MouseButton -> KeyState -> IO ()
+  , onMouseMove :: s -> Position -> IO ()
+  , onDebugMessage :: s -> DebugMessage -> IO ()
   }
 
-app :: Application
+app :: Application s
 app = Application
   { SB6.Application.init = return appInfo
-  , startup = return ()
-  , render = \_currentTime -> return ()
-  , shutdown = return ()
-  , onResize = \_size -> return ()
-  , onKey = \_key _keyState -> return ()
-  , onMouseButton = \_mouseButton _keyState -> return ()
-  , onMouseMove = \_position -> return ()
+  , startup = return undefined
+  , render = \_state _currentTime -> return ()
+  , shutdown = \_state -> return ()
+  , onResize = \_state _size -> return ()
+  , onKey = \_state _key _keyState -> return ()
+  , onMouseButton = \_state _mouseButton _keyState -> return ()
+  , onMouseMove = \_state _position -> return ()
   , onDebugMessage =
-      \(DebugMessage _source _typ _ident _severity message) ->
+      \_state (DebugMessage _source _typ _ident _severity message) ->
         hPutStrLn stderr message
   }
 
@@ -85,7 +85,7 @@ appInfo = AppInfo
 
 --------------------------------------------------------------------------------
 
-run :: Application -> IO ()
+run :: Application s -> IO ()
 run theApp = do
   startTime <- getCurrentTime
   void getArgsAndInitialize
@@ -117,16 +117,6 @@ run theApp = do
       void . createWindow . title $ theAppInfo
   unless (SB6.Application.cursor theAppInfo) (GLUT.cursor $= None)
   swapInterval $ if vsync theAppInfo then 1 else 0
-  displayCallback $= displayCB theApp startTime
-  closeCallback $= Just (closeCB theApp)
-  reshapeCallback $= Just (onResize theApp)
-  keyboardMouseCallback $= Just (keyboardMouseCB theApp)
-  motionCallback $= Just (onMouseMove theApp)
-  passiveMotionCallback $= Just (onMouseMove theApp)
-
-  when (debug theAppInfo) $ do
-    debugMessageCallback $= Just (onDebugMessage theApp)
-    debugOutputSynchronous $= Enabled
 
 #if DEBUG
   forM_ [ ("VENDOR", vendor),
@@ -135,29 +125,39 @@ run theApp = do
     val <- get var
     hPutStrLn stderr (name ++ ": " ++ val)
 #endif
-  startup theApp
+  state <- startup theApp
+
+  displayCallback $= displayCB theApp state startTime
+  closeCallback $= Just (closeCB theApp state)
+  reshapeCallback $= Just (onResize theApp state)
+  keyboardMouseCallback $= Just (keyboardMouseCB theApp state)
+  motionCallback $= Just (onMouseMove theApp state)
+  passiveMotionCallback $= Just (onMouseMove theApp state)
+  when (debug theAppInfo) $ do
+    debugMessageCallback $= Just (onDebugMessage theApp state)
+    debugOutputSynchronous $= Enabled
+
   ifFreeGLUT (actionOnWindowClose $= MainLoopReturns) (return ())
   mainLoop
 
-displayCB :: Application -> UTCTime -> DisplayCallback
-displayCB theApp startTime = do
+displayCB :: Application s -> s -> UTCTime -> DisplayCallback
+displayCB theApp state startTime = do
   currentTime <- getCurrentTime
-  render theApp $ realToFrac (currentTime `diffUTCTime` startTime)
+  render theApp state $ realToFrac (currentTime `diffUTCTime` startTime)
   swapBuffers
   postRedisplay Nothing
 
-keyboardMouseCB :: Application -> KeyboardMouseCallback
-keyboardMouseCB theApp key keyState _modifiers _position =
+keyboardMouseCB :: Application s -> s -> KeyboardMouseCallback
+keyboardMouseCB theApp state key keyState _modifiers _position =
   case (key, keyState) of
-    (Char '\ESC', Up) -> do
-      closeCB theApp
-    (Char c, _) -> onKey theApp (Right c) keyState
-    (SpecialKey k, _) -> onKey theApp (Left k) keyState
-    (MouseButton b, _) -> onMouseButton theApp b keyState
+    (Char '\ESC', Up) -> closeCB theApp state
+    (Char c, _) -> onKey theApp state (Right c) keyState
+    (SpecialKey k, _) -> onKey theApp state (Left k) keyState
+    (MouseButton b, _) -> onMouseButton theApp state b keyState
 
-closeCB :: Application -> IO ()
-closeCB theApp = do
-  shutdown theApp
+closeCB :: Application s -> s -> IO ()
+closeCB theApp state = do
+  shutdown theApp state
   gma <- get gameModeActive
   when gma leaveGameMode
   displayCallback $= return ()

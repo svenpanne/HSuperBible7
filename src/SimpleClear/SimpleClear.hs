@@ -10,8 +10,8 @@ import SB6
 init :: IO AppInfo
 init = return $ appInfo { title = "OpenGL SuperBible - Simple Clear" }
 
-render :: Double -> IO ()
-render _currentTime =
+render :: s -> Double -> IO ()
+render _state _currentTime =
   withArray [ 1, 0, 0, 1 ] $
     glClearBufferfv gl_COLOR 0
 
