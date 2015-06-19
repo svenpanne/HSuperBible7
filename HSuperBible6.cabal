@@ -22,10 +22,11 @@ library
     SB6.SB6M
     SB6.Shader
   build-depends:
+    array      >= 0.1 && < 0.6,
     base       >= 3   && < 5,
     binary     >= 0.6 && < 0.8,
     bytestring >= 0.9 && < 0.11,
-    time,
+    time       >= 1.0 && < 1.6,
     GLUT,
     OpenGL     >= 2.11.1,
     OpenGLRaw

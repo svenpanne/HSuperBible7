@@ -7,7 +7,8 @@ module SB6.SB6M (
 ) where
 
 import Control.Applicative( (<$>), (<*>) )
-import qualified Control.Monad as M
+import Control.Monad ( replicateM )
+import Data.Array ( Array, listArray )
 import Data.Binary.Get ( Get, runGet, getByteString, bytesRead, skip,
                          getWord32le )
 import Data.Bits ( (.|.), testBit, shift )
@@ -23,7 +24,7 @@ data SB6M a = SB6M
   { vertexData :: VertexData
   , vertexAttribData :: [VertexAttribData a]
   , indexData :: Maybe IndexData
-  , subObjectList :: [SubObject]
+  , subObjectList :: Array Int SubObject
   , rawData :: BS.ByteString  -- ^ contains little-endian data
   } deriving ( Eq, Ord, Show )
 
@@ -38,11 +39,12 @@ getSB6M bs = do
       ix = optional "index data" [ b | IndexDataChunk b <- bodies ]
       sl = optional "object list" [ b | SubObjectList b <- bodies ]
       allVertices = SubObject { first = 0, count = totalVertices vd }
+      subObjects = maybe [allVertices] id $ sl
   return $ SB6M
     { vertexData = vd
     , vertexAttribData = va
     , indexData = ix
-    , subObjectList = maybe [allVertices] id $ sl
+    , subObjectList = listArray (0, length subObjects - 1) subObjects
     , rawData = bs }
 
 one :: String -> [a] -> a
@@ -135,11 +137,10 @@ getChunkBody h = do
 
 data FileHeader = FileHeader
   { numChunks :: Int
-  , _flags :: Int
   } deriving ( Eq, Ord, Show )
 
 getFileHeader :: Get FileHeader
-getFileHeader = FileHeader <$> getNum32le <*> getNum32le
+getFileHeader = (const . FileHeader) <$> getNum32le <*> getWord32le
 
 --------------------------------------------------------------------------------
 
@@ -199,8 +200,8 @@ getIntegerHandling = v <$> getWord32le
 --------------------------------------------------------------------------------
 
 data SubObject = SubObject
-  { first :: GLint
-  , count :: GLsizei
+  { first :: ArrayIndex
+  , count :: NumArrayIndices
   } deriving ( Eq, Ord, Show )
 
 getSubObject :: Get SubObject
@@ -212,7 +213,7 @@ getSubObject = SubObject <$> getNum32le <*> getNum32le
 getList :: Get Int -> Get a -> Get [a]
 getList getCount getElement = do
   c <- getCount
-  M.replicateM c getElement
+  replicateM c getElement
 
 getNum32le :: Num a => Get a
 getNum32le = fromIntegral <$> getWord32le
