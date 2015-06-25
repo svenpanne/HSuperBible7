@@ -10,10 +10,6 @@ import qualified Data.ByteString.Unsafe as BSU
 import Foreign.Ptr  ( Ptr, nullPtr, plusPtr )
 import Foreign.Storable ( sizeOf )
 import Graphics.Rendering.OpenGL
-import Graphics.Rendering.OpenGL.Raw (
-  glDrawArraysInstancedBaseInstance, glDrawElementsInstancedBaseInstance,
-  gl_TRIANGLES )
-import SB6.DataType
 import SB6.SB6M
 
 data Object = Object
@@ -77,18 +73,13 @@ renderSubObject object objectIndex instanceCount baseInstance = do
   either
     (\subObjects ->
       let subObj = subObjects ! objectIndex
-      in glDrawArraysInstancedBaseInstance gl_TRIANGLES
-                                           (first subObj)
-                                           (count subObj)
-                                           instanceCount
-                                           baseInstance)
+      in drawArraysInstancedBaseInstance Triangles
+                                         (first subObj)
+                                         (count subObj)
+                                         instanceCount
+                                         baseInstance)
     (\(_, t, n) ->
-      glDrawElementsInstancedBaseInstance gl_TRIANGLES
-                                          n
-                                          (marshalDataType t)
-                                          nullPtr
-                                          instanceCount
-                                          baseInstance)
+      drawElementsInstancedBaseInstance Triangles n t nullPtr instanceCount baseInstance)
     (drawInfo object)
 
 size :: IndexData -> GLsizeiptr
