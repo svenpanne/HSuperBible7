@@ -10,7 +10,10 @@ import qualified Data.ByteString.Unsafe as BSU
 import Foreign.Ptr  ( Ptr, nullPtr, plusPtr )
 import Foreign.Storable ( sizeOf )
 import Graphics.Rendering.OpenGL
-import Graphics.Rendering.OpenGL.Raw
+import Graphics.Rendering.OpenGL.Raw (
+  glDrawArraysInstancedBaseInstance, glDrawElementsInstancedBaseInstance,
+  gl_TRIANGLES )
+import SB6.DataType
 import SB6.SB6M
 
 data Object = Object
@@ -85,41 +88,6 @@ renderSubObject object objectIndex instanceCount baseInstance = do
                                                          instanceCount
                                                          baseInstance)
        (indexBufferTypeNum object)
-
--- TODO: Should we export this (and unmarshalDataType) from OpenGL?
-marshalDataType :: DataType -> GLenum
-marshalDataType x = case x of
-   UnsignedByte -> gl_UNSIGNED_BYTE
-   Byte -> gl_BYTE
-   UnsignedShort -> gl_UNSIGNED_SHORT
-   Short -> gl_SHORT
-   UnsignedInt -> gl_UNSIGNED_INT
-   Int -> gl_INT
-   HalfFloat -> gl_HALF_FLOAT
-   Float -> gl_FLOAT
-   UnsignedByte332 -> gl_UNSIGNED_BYTE_3_3_2
-   UnsignedByte233Rev -> gl_UNSIGNED_BYTE_2_3_3_REV
-   UnsignedShort565 -> gl_UNSIGNED_SHORT_5_6_5
-   UnsignedShort565Rev -> gl_UNSIGNED_SHORT_5_6_5_REV
-   UnsignedShort4444 -> gl_UNSIGNED_SHORT_4_4_4_4
-   UnsignedShort4444Rev -> gl_UNSIGNED_SHORT_4_4_4_4_REV
-   UnsignedShort5551 -> gl_UNSIGNED_SHORT_5_5_5_1
-   UnsignedShort1555Rev -> gl_UNSIGNED_SHORT_1_5_5_5_REV
-   UnsignedInt8888 -> gl_UNSIGNED_INT_8_8_8_8
-   UnsignedInt8888Rev -> gl_UNSIGNED_INT_8_8_8_8_REV
-   UnsignedInt1010102 -> gl_UNSIGNED_INT_10_10_10_2
-   UnsignedInt2101010Rev -> gl_UNSIGNED_INT_2_10_10_10_REV
-   UnsignedInt248 -> gl_UNSIGNED_INT_24_8
-   UnsignedInt10f11f11fRev -> gl_UNSIGNED_INT_10F_11F_11F_REV
-   UnsignedInt5999Rev -> gl_UNSIGNED_INT_5_9_9_9_REV
-   Float32UnsignedInt248Rev -> gl_FLOAT_32_UNSIGNED_INT_24_8_REV
-   Bitmap -> gl_BITMAP
-   UnsignedShort88 -> gl_UNSIGNED_SHORT_8_8_APPLE
-   UnsignedShort88Rev -> gl_UNSIGNED_SHORT_8_8_REV_APPLE
-   Double -> gl_DOUBLE
-   TwoBytes -> gl_2_BYTES
-   ThreeBytes -> gl_3_BYTES
-   FourBytes -> gl_4_BYTES
 
 size :: IndexData -> GLsizeiptr
 size ix =

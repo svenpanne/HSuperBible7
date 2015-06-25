@@ -21,6 +21,8 @@ library
     SB6.Object
     SB6.SB6M
     SB6.Shader
+  other-modules:
+    SB6.DataType
   build-depends:
     array      >= 0.1 && < 0.6,
     base       >= 3   && < 5,
