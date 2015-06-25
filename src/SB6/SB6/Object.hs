@@ -18,9 +18,8 @@ import SB6.SB6M
 
 data Object = Object
   { vertexBuffer :: BufferObject
-  , indexBufferTypeNum :: Maybe (BufferObject, DataType, GLsizei)
   , vao :: VertexArrayObject
-  , subObjects :: Array Int SubObject
+  , drawInfo :: Either (Array Int SubObject) (BufferObject, DataType, GLsizei)
   } deriving ( Eq, Ord, Show )
 
 loadObject :: FilePath -> IO Object
@@ -40,13 +39,13 @@ loadObject filePath = do
     vertexAttribPointer loc $= (attribIntegerHandling vad, attribDescriptor vad)
     vertexAttribArray loc $= Enabled
 
-  theIndexBufferTypeNum <- maybe
-    (return Nothing)
+  theDrawInfo <- maybe
+    (return . Left  . subObjectList $ sb6m)
     (\ix -> do theIndexBuffer <- genObjectName
                bindBuffer ElementArrayBuffer $= Just theIndexBuffer
                withRawDataAtOffset sb6m (indexDataOffset ix) $ \ptr -> do
                  bufferData ElementArrayBuffer $= ( size ix , ptr , StaticDraw )
-               return $ Just (theIndexBuffer, indexType ix, indexCount ix))
+               return $ Right (theIndexBuffer, indexType ix, indexCount ix))
     (indexData sb6m)
 
   bindVertexArrayObject $= Nothing
@@ -54,20 +53,20 @@ loadObject filePath = do
 
   return $ Object
     { vertexBuffer = theVertexBuffer
-    , indexBufferTypeNum = theIndexBufferTypeNum
     , vao = theVao
-    , subObjects = subObjectList sb6m }
+    , drawInfo = theDrawInfo }
 
 withRawDataAtOffset :: SB6M a -> Int -> (Ptr b -> IO c) -> IO c
 withRawDataAtOffset sb6m offset f =
   BSU.unsafeUseAsCString (rawData sb6m) $ \ptr ->
     f (ptr `plusPtr` offset)
 
+-- TODO: Turn freeObject and renderSubObject into the only fields of Object?
 freeObject :: Object -> IO ()
 freeObject object = do
   deleteObjectName $ vao object
   deleteObjectName $ vertexBuffer object
-  maybe (return ()) (\(b,_,_) -> deleteObjectName b) $ indexBufferTypeNum object
+  either (const $ return ()) (\(b,_,_) -> deleteObjectName b) $ drawInfo object
 
 renderObject :: Object -> IO ()
 renderObject object = renderSubObject object 0 1 0
@@ -75,19 +74,22 @@ renderObject object = renderSubObject object 0 1 0
 renderSubObject :: Object -> Int -> GLsizei -> GLuint -> IO ()
 renderSubObject object objectIndex instanceCount baseInstance = do
   bindVertexArrayObject $= Just (vao object)
-  maybe (let subObj = subObjects object ! objectIndex
-         in glDrawArraysInstancedBaseInstance gl_TRIANGLES
-                                              (first subObj)
-                                              (count subObj)
-                                              instanceCount
-                                              baseInstance)
-        (\(_,t,n) -> glDrawElementsInstancedBaseInstance gl_TRIANGLES
-                                                         n
-                                                         (marshalDataType t)
-                                                         nullPtr
-                                                         instanceCount
-                                                         baseInstance)
-       (indexBufferTypeNum object)
+  either
+    (\subObjects ->
+      let subObj = subObjects ! objectIndex
+      in glDrawArraysInstancedBaseInstance gl_TRIANGLES
+                                           (first subObj)
+                                           (count subObj)
+                                           instanceCount
+                                           baseInstance)
+    (\(_, t, n) ->
+      glDrawElementsInstancedBaseInstance gl_TRIANGLES
+                                          n
+                                          (marshalDataType t)
+                                          nullPtr
+                                          instanceCount
+                                          baseInstance)
+    (drawInfo object)
 
 size :: IndexData -> GLsizeiptr
 size ix =
