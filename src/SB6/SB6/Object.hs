@@ -1,8 +1,11 @@
+{-# LANGUAGE CPP #-}
 module SB6.Object (
   Object, loadObject, freeObject, renderObject, renderSubObject
 ) where
 
+#if !MIN_VERSION_base(4,8,0)
 import Control.Applicative( (<$>) )
+#endif
 import Control.Monad ( forM_ )
 import Data.Array ( Array, (!) )
 import qualified Data.ByteString as BS

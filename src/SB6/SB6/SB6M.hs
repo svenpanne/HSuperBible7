@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module SB6.SB6M (
   SB6M(..), parseSB6M,
   VertexData(..),
@@ -6,7 +7,9 @@ module SB6.SB6M (
   SubObject(..)
 ) where
 
+#if !MIN_VERSION_base(4,8,0)
 import Control.Applicative( (<$>), (<*>) )
+#endif
 import Control.Monad ( replicateM )
 import Data.Array ( Array, listArray )
 import Data.Binary.Get ( Get, runGet, getByteString, bytesRead, skip,
