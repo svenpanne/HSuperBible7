@@ -1,7 +1,7 @@
-name: HSuperBible6
+name: HSuperBible7
 version: 0.1.0.0
-synopsis: Examples from the OpenGL SuperBible (6th ed.) in Haskell
-description: All the examples from the OpenGL SuperBible (6th ed.) in Haskell.
+synopsis: Examples from the OpenGL SuperBible (7th ed.) in Haskell
+description: All the examples from the OpenGL SuperBible (7th ed.) in Haskell.
 license: BSD3
 license-file: LICENSE
 author: Sven Panne
@@ -16,13 +16,13 @@ flag debug
 
 library
   exposed-modules:
-    SB6
-    SB6.Application
-    SB6.Object
-    SB6.SB6M
-    SB6.Shader
+    SB7
+    SB7.Application
+    SB7.Object
+    SB7.SB7M
+    SB7.Shader
   other-modules:
-    SB6.DataType
+    SB7.DataType
   build-depends:
     array      >= 0.1 && < 0.6,
     base       >= 3   && < 5,
@@ -32,7 +32,7 @@ library
     GLUT,
     OpenGL     >= 2.12.1,
     OpenGLRaw
-  hs-source-dirs: src/SB6
+  hs-source-dirs: src/SB7
   default-language: Haskell2010
   ghc-options: -Wall
   other-extensions: CPP
@@ -51,53 +51,53 @@ library
 
 executable SimpleClear
   main-is: SimpleClear.hs
-  build-depends: base >= 3 && < 5, HSuperBible6, OpenGLRaw
+  build-depends: base >= 3 && < 5, HSuperBible7, OpenGLRaw
   hs-source-dirs: src/SimpleClear
   default-language: Haskell2010
   ghc-options: -Wall
 
 executable SinglePoint
   main-is: SinglePoint.hs
-  build-depends: base >= 3 && < 5, HSuperBible6, OpenGL >= 2.11, OpenGLRaw
+  build-depends: base >= 3 && < 5, HSuperBible7, OpenGL >= 2.11, OpenGLRaw
   hs-source-dirs: src/SinglePoint
   default-language: Haskell2010
   ghc-options: -Wall
 
 executable SingleTri
   main-is: SingleTri.hs
-  build-depends: base >= 3 && < 5, HSuperBible6, OpenGL >= 2.11, OpenGLRaw
+  build-depends: base >= 3 && < 5, HSuperBible7, OpenGL >= 2.11, OpenGLRaw
   hs-source-dirs: src/SingleTri
   default-language: Haskell2010
   ghc-options: -Wall
 
 executable MovingTri
   main-is: MovingTri.hs
-  build-depends: base >= 3 && < 5, HSuperBible6, OpenGL >= 2.11, OpenGLRaw
+  build-depends: base >= 3 && < 5, HSuperBible7, OpenGL >= 2.11, OpenGLRaw
   hs-source-dirs: src/MovingTri
   default-language: Haskell2010
   ghc-options: -Wall
 
 executable TessellatedTri
   main-is: TessellatedTri.hs
-  build-depends: base >= 3 && < 5, HSuperBible6, OpenGL >= 2.11, OpenGLRaw
+  build-depends: base >= 3 && < 5, HSuperBible7, OpenGL >= 2.11, OpenGLRaw
   hs-source-dirs: src/TessellatedTri
   default-language: Haskell2010
   ghc-options: -Wall
 
 executable TessellatedGSTri
   main-is: TessellatedGSTri.hs
-  build-depends: base >= 3 && < 5, HSuperBible6, OpenGL >= 2.11, OpenGLRaw
+  build-depends: base >= 3 && < 5, HSuperBible7, OpenGL >= 2.11, OpenGLRaw
   hs-source-dirs: src/TessellatedGSTri
   default-language: Haskell2010
   ghc-options: -Wall
 
 executable FragColorFromPos
   main-is: FragColorFromPos.hs
-  build-depends: base >= 3 && < 5, HSuperBible6, OpenGL >= 2.11, OpenGLRaw
+  build-depends: base >= 3 && < 5, HSuperBible7, OpenGL >= 2.11, OpenGLRaw
   hs-source-dirs: src/FragColorFromPos
   default-language: Haskell2010
   ghc-options: -Wall
 
 source-repository head
   type: git
-  location: https://github.com/svenpanne/HSuperBible6.git
+  location: https://github.com/svenpanne/HSuperBible7.git

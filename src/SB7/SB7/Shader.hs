@@ -1,4 +1,4 @@
-module SB6.Shader (
+module SB7.Shader (
   load,
   linkFromShaders
 ) where

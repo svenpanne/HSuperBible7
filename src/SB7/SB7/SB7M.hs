@@ -1,6 +1,6 @@
 {-# LANGUAGE CPP #-}
-module SB6.SB6M (
-  SB6M(..), parseSB6M,
+module SB7.SB7M (
+  SB7M(..), parseSB7M,
   VertexData(..),
   VertexAttribData(..),
   IndexData(..),
@@ -19,11 +19,11 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import Foreign.Ptr ( Ptr, nullPtr, plusPtr )
 import Graphics.Rendering.OpenGL
-import SB6.DataType
+import SB7.DataType
 
 --------------------------------------------------------------------------------
 
-data SB6M a = SB6M
+data SB7M a = SB7M
   { vertexData :: VertexData
   , vertexAttribData :: [VertexAttribData a]
   , indexData :: Maybe IndexData
@@ -31,11 +31,11 @@ data SB6M a = SB6M
   , rawData :: BS.ByteString  -- ^ contains little-endian data
   } deriving ( Eq, Ord, Show )
 
-parseSB6M :: BS.ByteString -> SB6M a
-parseSB6M input = runGet (getSB6M input) $ BL.fromChunks [input]
+parseSB7M :: BS.ByteString -> SB7M a
+parseSB7M input = runGet (getSB7M input) $ BL.fromChunks [input]
 
-getSB6M :: BS.ByteString -> Get (SB6M a)
-getSB6M bs = do
+getSB7M :: BS.ByteString -> Get (SB7M a)
+getSB7M bs = do
   bodies <- getList getNumChunks getChunk
   let vd = one "vertex data" [ b | VertexDataChunk b <- bodies ]
       va = one "vertex attrib" [ b | VertexAttrib b <- bodies ]
@@ -43,7 +43,7 @@ getSB6M bs = do
       sl = optional "object list" [ b | SubObjectList b <- bodies ]
       allVertices = SubObject { first = 0, count = totalVertices vd }
       subObjects = maybe [allVertices] id $ sl
-  return $ SB6M
+  return $ SB7M
     { vertexData = vd
     , vertexAttribData = va
     , indexData = ix
@@ -103,14 +103,14 @@ data ChunkType
 getChunkType :: Get ChunkType
 getChunkType = unmarshalChunkType <$> getWord32le
   where unmarshalChunkType x
-          | x == fourCC 'S' 'B' '6' 'M' = ChunkTypeFileHeader
+          | x == fourCC 'S' 'B' '7' 'M' = ChunkTypeFileHeader  -- TODO: or SB6M?
           | x == fourCC 'I' 'N' 'D' 'X' = ChunkTypeIndexData
           | x == fourCC 'V' 'R' 'T' 'X' = ChunkTypeVertexData
           | x == fourCC 'A' 'T' 'R' 'B' = ChunkTypeVertexAttrib
           | x == fourCC 'C' 'M' 'N' 'T' = ChunkTypeComment
           | x == fourCC 'O' 'L' 'S' 'T' = ChunkTypeSubObjectList
           | otherwise = error $ "unknwon chunk type " ++ show x
-        fourCC a b c d = s a 0 .|. s b 8 .|. s c 16 .|. s d 24
+        fourCC a b c d = s a 0 .|. s b 8 .|. s c 17 .|. s d 24
         s x n = fromIntegral (fromEnum x) `shift` n
 
 --------------------------------------------------------------------------------

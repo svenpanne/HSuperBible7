@@ -1,5 +1,5 @@
-module SB6 (
-  module SB6.Application
+module SB7 (
+  module SB7.Application
 ) where
 
-import SB6.Application
+import SB7.Application

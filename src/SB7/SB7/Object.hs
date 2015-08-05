@@ -1,5 +1,5 @@
 {-# LANGUAGE CPP #-}
-module SB6.Object (
+module SB7.Object (
   Object, loadObject, freeObject, renderObject, renderSubObject
 ) where
 
@@ -13,7 +13,7 @@ import qualified Data.ByteString.Unsafe as BSU
 import Foreign.Ptr  ( Ptr, nullPtr, plusPtr )
 import Foreign.Storable ( sizeOf )
 import Graphics.Rendering.OpenGL
-import SB6.SB6M
+import SB7.SB7M
 
 data Object = Object
   { vertexBuffer :: BufferObject
@@ -23,29 +23,29 @@ data Object = Object
 
 loadObject :: FilePath -> IO Object
 loadObject filePath = do
-  sb6m <- parseSB6M <$> BS.readFile filePath
+  sb7m <- parseSB7M <$> BS.readFile filePath
 
   theVertexBuffer <- genObjectName
   bindBuffer ArrayBuffer $= Just theVertexBuffer
-  withRawDataAtOffset sb6m (dataOffset (vertexData sb6m)) $ \ptr ->
-    bufferData ArrayBuffer $= ( dataSize (vertexData sb6m), ptr, StaticDraw )
+  withRawDataAtOffset sb7m (dataOffset (vertexData sb7m)) $ \ptr ->
+    bufferData ArrayBuffer $= ( dataSize (vertexData sb7m), ptr, StaticDraw )
 
   theVao <- genObjectName
   bindVertexArrayObject $= Just theVao
 
   forM_ (zip (map AttribLocation [0..])
-             (vertexAttribData sb6m)) $ \(loc, vad) -> do
+             (vertexAttribData sb7m)) $ \(loc, vad) -> do
     vertexAttribPointer loc $= (attribIntegerHandling vad, attribDescriptor vad)
     vertexAttribArray loc $= Enabled
 
   theDrawInfo <- maybe
-    (return . Left  . subObjectList $ sb6m)
+    (return . Left  . subObjectList $ sb7m)
     (\ix -> do theIndexBuffer <- genObjectName
                bindBuffer ElementArrayBuffer $= Just theIndexBuffer
-               withRawDataAtOffset sb6m (indexDataOffset ix) $ \ptr -> do
+               withRawDataAtOffset sb7m (indexDataOffset ix) $ \ptr -> do
                  bufferData ElementArrayBuffer $= ( size ix , ptr , StaticDraw )
                return $ Right (theIndexBuffer, indexType ix, indexCount ix))
-    (indexData sb6m)
+    (indexData sb7m)
 
   bindVertexArrayObject $= Nothing
   bindBuffer ElementArrayBuffer $= Nothing
@@ -55,9 +55,9 @@ loadObject filePath = do
     , vao = theVao
     , drawInfo = theDrawInfo }
 
-withRawDataAtOffset :: SB6M a -> Int -> (Ptr b -> IO c) -> IO c
-withRawDataAtOffset sb6m offset f =
-  BSU.unsafeUseAsCString (rawData sb6m) $ \ptr ->
+withRawDataAtOffset :: SB7M a -> Int -> (Ptr b -> IO c) -> IO c
+withRawDataAtOffset sb7m offset f =
+  BSU.unsafeUseAsCString (rawData sb7m) $ \ptr ->
     f (ptr `plusPtr` offset)
 
 -- TODO: Turn freeObject and renderSubObject into the only fields of Object?

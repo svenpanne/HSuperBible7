@@ -1,11 +1,11 @@
--- SimpleClear.hs, see listing 2.1 in the OpenGL SuperBible, 6th ed.
+-- SimpleClear.hs, see listing 2.1 in the OpenGL SuperBible, 7th ed.
 -- Adapted from simpleclear.cpp which is (c) 2012-2013 Graham Sellers.
 
 module Main ( main ) where
 
 import Foreign.Marshal.Array ( withArray )
 import Graphics.Rendering.OpenGL.Raw.Core43 ( glClearBufferfv, gl_COLOR )
-import SB6
+import SB7
 
 init :: IO AppInfo
 init = return $ appInfo { title = "OpenGL SuperBible - Simple Clear" }
@@ -17,6 +17,6 @@ render _state _currentTime =
 
 main :: IO ()
 main = run $ app
-  { SB6.init = Main.init
-  , SB6.render = Main.render
+  { SB7.init = Main.init
+  , SB7.render = Main.render
   }

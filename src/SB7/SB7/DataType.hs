@@ -1,5 +1,5 @@
 -- TODO: This should somehow be exported from OpenGL.
-module SB6.DataType where
+module SB7.DataType where
 
 import Graphics.Rendering.OpenGL
 import Graphics.Rendering.OpenGL.Raw

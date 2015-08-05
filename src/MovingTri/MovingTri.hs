@@ -1,4 +1,4 @@
--- MovingTri.hs, see listings 3.1 - 3.2 in the OpenGL SuperBible, 6th ed.
+-- MovingTri.hs, see listings 3.1 - 3.2 in the OpenGL SuperBible, 7th ed.
 -- Adapted from movingtri.cpp which is (c) 2012-2013 Graham Sellers.
 
 module Main ( main ) where
@@ -7,7 +7,7 @@ import Foreign.Marshal.Array ( withArray )
 import Graphics.Rendering.OpenGL
 import Graphics.Rendering.OpenGL.Raw.Core41 (
   glClearBufferfv, gl_COLOR, glVertexAttrib4fv )
-import SB6
+import SB7
 
 data State = State
   { program :: Program
@@ -83,8 +83,8 @@ shutdown state = do
 
 main :: IO ()
 main = run $ app
-  { SB6.init = Main.init
-  , SB6.startup = Main.startup
-  , SB6.render = Main.render
-  , SB6.shutdown = Main.shutdown
+  { SB7.init = Main.init
+  , SB7.startup = Main.startup
+  , SB7.render = Main.render
+  , SB7.shutdown = Main.shutdown
   }
