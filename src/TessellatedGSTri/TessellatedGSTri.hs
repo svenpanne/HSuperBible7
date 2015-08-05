@@ -1,5 +1,5 @@
 -- TessellatedTri.hs, see listing 3.9 in the OpenGL SuperBible, 7th ed.
--- Adapted from tessellatedtri.cpp which is (c) 2012-2013 Graham Sellers.
+-- Adapted from tessellatedtri.cpp which is (c) 2012-2015 Graham Sellers.
 
 module Main ( main ) where
 

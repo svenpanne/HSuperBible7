@@ -1,6 +1,6 @@
 ## Disclaimer
 
-All Haskell code is based on the C++ examples from the [OpenGL SuperBible](http://www.openglsuperbible.com/) (7th ed.), which are available [on GitHub](https://github.com/openglsuperbible/sb7code). Their original copyright is (c) 2012-2013 Graham Sellers.
+All Haskell code is based on the C++ examples from the [OpenGL SuperBible](http://www.openglsuperbible.com/) (7th ed.), which are available [on GitHub](https://github.com/openglsuperbible/sb7code). Their original copyright is (c) 2012-2015 Graham Sellers.
 
 ## File Organization
 

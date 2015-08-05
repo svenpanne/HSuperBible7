@@ -1,5 +1,5 @@
 -- SimpleClear.hs, see listing 2.1 in the OpenGL SuperBible, 7th ed.
--- Adapted from simpleclear.cpp which is (c) 2012-2013 Graham Sellers.
+-- Adapted from simpleclear.cpp which is (c) 2012-2015 Graham Sellers.
 
 module Main ( main ) where
 

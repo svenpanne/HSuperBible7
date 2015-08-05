@@ -1,5 +1,5 @@
 -- SinglePoint.hs, see listings 2.3 - 2.7 in the OpenGL SuperBible, 7th ed.
--- Adapted from singlepoint.cpp which is (c) 2012-2013 Graham Sellers.
+-- Adapted from singlepoint.cpp which is (c) 2012-2015 Graham Sellers.
 
 module Main ( main ) where
 

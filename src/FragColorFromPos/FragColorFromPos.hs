@@ -1,5 +1,5 @@
 -- FragColorFromPos, see listings 3.10 - 3.12 in the OpenGL SuperBible, 7th ed.
--- Adapted from fragcolorfrompos.cpp which is (c) 2012-2013 Graham Sellers.
+-- Adapted from fragcolorfrompos.cpp which is (c) 2012-2015 Graham Sellers.
 
 module Main ( main ) where
 
