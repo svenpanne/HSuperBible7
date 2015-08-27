@@ -2,7 +2,8 @@
 module SB7.Application (
   Application(..), app,
   AppInfo(..), appInfo,
-  run
+  run,
+  windowTitle
 ) where
 
 import Control.Monad ( when, unless, void )
@@ -21,6 +22,15 @@ import Graphics.Rendering.OpenGL.Raw ( getProcAddress )
 
 --------------------------------------------------------------------------------
 
+-- Note: We provide no onMouseWheel callback, because the underlying API is
+-- implemented in freeglut only, not in classic GLUT. Furthermore, onMouseButton
+-- gets called with WheelUp/WheelDown as the button, so no functionality is
+-- missing. And finally: No example from the book is using onMouseWheel.
+--
+-- There is no getMousePosition function, either, because neither GLUT nor
+-- freeglut directly provide an API for this. Furthermore, this can easily be
+-- emulated via an IORef in the application state holding the current mouse
+-- position which gets updated via onMouseMove.
 data Application s = Application
   { init :: IO AppInfo
   , startup :: IO s
@@ -50,6 +60,9 @@ app = Application
 
 --------------------------------------------------------------------------------
 
+-- Note: We provide no "robust" flag, because currently neither GLUT nor
+-- freeglut provide an API for the ARB_create_context_robustness extension. And
+-- no example from the book is using it, anyway.
 data AppInfo = AppInfo
   { title :: String
   , windowSize :: Size
@@ -64,7 +77,7 @@ data AppInfo = AppInfo
 
 appInfo :: AppInfo
 appInfo = AppInfo
-  { title = "SuperBible7 Example"
+  { title = "OpenGL SuperBible Example"
   ,  SB7.Application.windowSize  = Size 800 600
 #if OS_DARWIN
   , version = (3, 2)
@@ -103,6 +116,8 @@ run theApp = do
   initialContextFlags $= [ ForwardCompatibleContext ]
 #if DEBUG
     ++ [ DebugContext ]
+#else
+    ++ opt DebugContext debug
 #endif
   if fullscreen theAppInfo
     then do
