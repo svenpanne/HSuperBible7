@@ -16,6 +16,7 @@ import Foreign.C.Types
 import Foreign.Ptr ( FunPtr, nullFunPtr )
 import System.Exit ( exitSuccess )
 import System.IO ( hPutStrLn, stderr )
+import System.Info ( os )
 
 import Graphics.UI.GLUT as GLUT
 import Graphics.Rendering.OpenGL.Raw ( getProcAddress )
@@ -79,11 +80,7 @@ appInfo :: AppInfo
 appInfo = AppInfo
   { title = "OpenGL SuperBible Example"
   ,  SB7.Application.windowSize  = Size 800 600
-#if OS_DARWIN
-  , version = (3, 2)
-#else
-  , version = (4, 3)
-#endif
+  , version = if os `elem` [ "darwin", "osx" ] then (3, 2) else (4, 3)
   , numSamples = 0
   , fullscreen  = False
   , vsync  = False

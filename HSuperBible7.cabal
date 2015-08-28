@@ -38,8 +38,6 @@ library
   other-extensions: CPP
   if flag(debug)
     cpp-options: "-DDEBUG"
-  if os(darwin)
-    cpp-options: "-DOS_DARWIN"
   if os(windows)
     cpp-options: "-DOS_WINDOWS"
     if arch(i386)
