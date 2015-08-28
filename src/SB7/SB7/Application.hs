@@ -3,7 +3,7 @@ module SB7.Application (
   Application(..), app,
   AppInfo(..), appInfo,
   run,
-  windowTitle
+  windowTitle, extensionSupported
 ) where
 
 import Control.Monad ( when, unless, void )
