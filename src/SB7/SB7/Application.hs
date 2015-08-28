@@ -6,10 +6,10 @@ module SB7.Application (
   windowTitle, extensionSupported
 ) where
 
-import Control.Monad ( when, unless, void )
-#if DEBUG
-import Control.Monad ( forM_ )
+#if !MIN_VERSION_base(4,8,0)
+import Control.Applicative( (<$>) )
 #endif
+import Control.Monad ( forM_, when, unless, void )
 import Data.List ( isPrefixOf )
 import Data.Time.Clock ( UTCTime, diffUTCTime, getCurrentTime )
 import Foreign.C.Types
@@ -86,11 +86,7 @@ appInfo = AppInfo
   , vsync  = False
   , SB7.Application.cursor  = True
   , SB7.Application.stereo  = False
-#if DEBUG
-  , debug  = True
-#else
   , debug  = False
-#endif
   }
 
 --------------------------------------------------------------------------------
@@ -98,8 +94,8 @@ appInfo = AppInfo
 run :: Application s -> IO ()
 run theApp = do
   startTime <- getCurrentTime
-  void getArgsAndInitialize
-  theAppInfo <- SB7.Application.init theApp
+  (_progName, args) <- getArgsAndInitialize
+  theAppInfo <- handleArgs args <$> SB7.Application.init theApp
   let numOpt f fld = opt (f . fromIntegral . fld $ theAppInfo) ((> 0) . fld)
       opt val predicate = if predicate theAppInfo then [ val ] else []
       width (Size w _) = w
@@ -110,12 +106,7 @@ run theApp = do
     opt Stereoscopic SB7.Application.stereo
   initialContextVersion $= version theAppInfo
   initialContextProfile $= [ CoreProfile ]
-  initialContextFlags $= [ ForwardCompatibleContext ]
-#if DEBUG
-    ++ [ DebugContext ]
-#else
-    ++ opt DebugContext debug
-#endif
+  initialContextFlags $= [ ForwardCompatibleContext ] ++ opt DebugContext debug
   if fullscreen theAppInfo
     then do
       gameModeCapabilities $=
@@ -130,13 +121,13 @@ run theApp = do
   unless (SB7.Application.cursor theAppInfo) (GLUT.cursor $= None)
   swapInterval $ if vsync theAppInfo then 1 else 0
 
-#if DEBUG
-  forM_ [ ("VENDOR", vendor),
-          ("VERSION", glVersion),
-          ("RENDERER", renderer) ] $ \(name, var) -> do
-    val <- get var
-    hPutStrLn stderr (name ++ ": " ++ val)
-#endif
+  when (debug theAppInfo) $
+    forM_ [ ("VENDOR", vendor),
+            ("VERSION", glVersion),
+            ("RENDERER", renderer) ] $ \(name, var) -> do
+      val <- get var
+      hPutStrLn stderr (name ++ ": " ++ val)
+
   state <- startup theApp
 
   displayCallback $= displayCB theApp state startTime
@@ -151,6 +142,22 @@ run theApp = do
 
   ifFreeGLUT (actionOnWindowClose $= MainLoopReturns) (return ())
   mainLoop
+
+handleArgs :: [String] -> AppInfo -> AppInfo
+handleArgs args theAppInfo = foldr foo theAppInfo args
+  where foo :: String -> AppInfo -> AppInfo
+        foo arg ai
+          | arg == "-nofullscreen" = ai { fullscreen = False }
+          | arg == "-fullscreen" = ai { fullscreen = True }
+          | arg == "-novsync" = ai { vsync = False }
+          | arg == "-vsync" = ai { vsync = True }
+          | arg == "-nocursor" = ai { SB7.Application.cursor = False }
+          | arg == "-cursor" = ai { SB7.Application.cursor = True }
+          | arg == "-nostereo" = ai { SB7.Application.stereo = False }
+          | arg == "-stereo" = ai { SB7.Application.stereo = True }
+          | arg == "-nodebug" = ai { debug = False }
+          | arg == "-debug" = ai { debug = True }
+          | otherwise = ai
 
 displayCB :: Application s -> s -> UTCTime -> DisplayCallback
 displayCB theApp state startTime = do
