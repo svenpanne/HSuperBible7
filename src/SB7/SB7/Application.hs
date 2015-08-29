@@ -10,10 +10,13 @@ module SB7.Application (
 import Control.Applicative( (<$>) )
 #endif
 import Control.Monad ( forM_, when, unless, void )
+import Control.Monad.Trans.Reader ( local )
 import Data.List ( isPrefixOf )
 import Data.Time.Clock ( UTCTime, diffUTCTime, getCurrentTime )
 import Foreign.C.Types
 import Foreign.Ptr ( FunPtr, nullFunPtr )
+import Options.Applicative
+import Options.Applicative.Types ( ReadM(..), readerAsk )
 import System.Exit ( exitSuccess )
 import System.IO ( hPutStrLn, stderr )
 import System.Info ( os )
@@ -79,7 +82,7 @@ data AppInfo = AppInfo
 appInfo :: AppInfo
 appInfo = AppInfo
   { title = "OpenGL SuperBible Example"
-  ,  SB7.Application.windowSize  = Size 800 600
+  , SB7.Application.windowSize  = Size 800 600
   , version = if os `elem` [ "darwin", "osx" ] then (3, 2) else (4, 3)
   , numSamples = 0
   , fullscreen  = False
@@ -95,7 +98,7 @@ run :: Application s -> IO ()
 run theApp = do
   startTime <- getCurrentTime
   (_progName, args) <- getArgsAndInitialize
-  theAppInfo <- handleArgs args <$> SB7.Application.init theApp
+  theAppInfo <- handleArgs args =<< SB7.Application.init theApp
   let numOpt f fld = opt (f . fromIntegral . fld $ theAppInfo) ((> 0) . fld)
       opt val predicate = if predicate theAppInfo then [ val ] else []
       width (Size w _) = w
@@ -143,21 +146,69 @@ run theApp = do
   ifFreeGLUT (actionOnWindowClose $= MainLoopReturns) (return ())
   mainLoop
 
-handleArgs :: [String] -> AppInfo -> AppInfo
-handleArgs args theAppInfo = foldr foo theAppInfo args
-  where foo :: String -> AppInfo -> AppInfo
-        foo arg ai
-          | arg == "-nofullscreen" = ai { fullscreen = False }
-          | arg == "-fullscreen" = ai { fullscreen = True }
-          | arg == "-novsync" = ai { vsync = False }
-          | arg == "-vsync" = ai { vsync = True }
-          | arg == "-nocursor" = ai { SB7.Application.cursor = False }
-          | arg == "-cursor" = ai { SB7.Application.cursor = True }
-          | arg == "-nostereo" = ai { SB7.Application.stereo = False }
-          | arg == "-stereo" = ai { SB7.Application.stereo = True }
-          | arg == "-nodebug" = ai { debug = False }
-          | arg == "-debug" = ai { debug = True }
-          | otherwise = ai
+handleArgs :: [String] -> AppInfo -> IO AppInfo
+handleArgs args theAppInfo =
+  handleParseResult $ execParserPure (prefs idm) opts args
+  where opts = info (helper <*> parseWith theAppInfo) fullDesc
+
+parseWith :: AppInfo -> Parser AppInfo
+parseWith theAppInfo = AppInfo
+  <$> strOption (long "title"
+              <> metavar "TITLE"
+              <> defaultValueWith show title
+              <> help "Set window title")
+  <*> option (pair Size nonNegative 'x' nonNegative)
+             (long "window-size"
+           <> metavar "WxH"
+           <> defaultValueWith showSize SB7.Application.windowSize
+           <> help "Set window size")
+  <*> option (pair (,) nonNegative '.' nonNegative)
+             (long "version"
+           <> metavar "MAJOR.MINOR"
+           <> defaultValueWith showVersion version
+           <> help "Set OpenGL version to use")
+  <*> option nonNegative (long "num-samples"
+                       <> metavar "N"
+                       <> defaultValueWith show numSamples
+                       <> help "Control multisampling, 0 = none")
+  <*> boolOption "fullscreen" fullscreen "full screen mode"
+  <*> boolOption "vsync" vsync "vertical synchronization"
+  <*> boolOption "cursor" SB7.Application.cursor "cursor"
+  <*> boolOption "stereo" SB7.Application.stereo "stereoscopic mode"
+  <*> boolOption "debug" debug "debugging features"
+  where defaultValueWith s proj = value (proj theAppInfo) <> showDefaultWith s
+        showSize (Size w h) = show w ++ "x" ++ show h
+        showVersion (major, minor) = show major ++ "." ++ show minor
+        boolOption longName proj what =
+          option boolean (long longName
+                       <> metavar "BOOL"
+                       <> defaultValueWith show proj
+                       <> help ("Enable " ++ what))
+
+pair :: (a -> b -> c) -> ReadM a -> Char -> ReadM b -> ReadM c
+pair p r1 sep r2 = do
+  s <- readerAsk
+  case break (== sep) s of
+    (x, (_:y)) -> p <$> localM (const x) r1 <*> localM (const y) r2
+    _ -> readerError $ "missing separator " ++ show [sep]
+  where localM f = ReadM . local f . unReadM
+
+nonNegative :: (Read a, Show a, Integral a) => ReadM a
+nonNegative = do
+  s <- readerAsk
+  case reads s of
+    [(i, "")]
+      | i >= 0 -> return i
+      | otherwise -> readerError $ show i ++ " is negative"
+    _ -> readerError $ show s ++ " is not an integer"
+
+boolean :: ReadM Bool
+boolean = do
+  s <- readerAsk
+  case () of
+    _ | s `elem` [ "0", "f", "F", "false", "FALSE", "False" ] ->  return False
+      | s `elem` [ "1", "t", "T", "true", "TRUE", "True" ] -> return True
+      | otherwise -> readerError $ show s ++ " is not a boolean"
 
 displayCB :: Application s -> s -> UTCTime -> DisplayCallback
 displayCB theApp state startTime = do
