@@ -26,6 +26,19 @@ import Graphics.Rendering.OpenGL.Raw ( getProcAddress )
 
 --------------------------------------------------------------------------------
 
+#if !MIN_VERSION_base(4,5,0)
+import Data.Monoid ( Monoid )
+
+infixr 6 <>
+
+-- | An infix synonym for 'mappend'.
+(<>) :: Monoid m => m -> m -> m
+(<>) = mappend
+{-# INLINE (<>) #-}
+#endif
+
+--------------------------------------------------------------------------------
+
 -- Note: We provide no onMouseWheel callback, because the underlying API is
 -- implemented in freeglut only, not in classic GLUT. Furthermore, onMouseButton
 -- gets called with WheelUp/WheelDown as the button, so no functionality is
@@ -146,6 +159,72 @@ run theApp = do
   ifFreeGLUT (actionOnWindowClose $= MainLoopReturns) (return ())
   mainLoop
 
+displayCB :: Application s -> s -> UTCTime -> DisplayCallback
+displayCB theApp state startTime = do
+  currentTime <- getCurrentTime
+  render theApp state $ realToFrac (currentTime `diffUTCTime` startTime)
+  swapBuffers
+  postRedisplay Nothing
+
+keyboardMouseCB :: Application s -> s -> KeyboardMouseCallback
+keyboardMouseCB theApp state key keyState _modifiers _position =
+  case (key, keyState) of
+    (Char '\ESC', Up) -> closeCB theApp state
+    (Char c, _) -> onKey theApp state (Right c) keyState
+    (SpecialKey k, _) -> onKey theApp state (Left k) keyState
+    (MouseButton b, _) -> onMouseButton theApp state b keyState
+
+closeCB :: Application s -> s -> IO ()
+closeCB theApp state = do
+  shutdown theApp state
+  gma <- get gameModeActive
+  when gma leaveGameMode
+  displayCallback $= return ()
+  closeCallback $= Nothing
+  -- Exiting is a bit tricky due to a freeglut bug: leaveMainLoop just sets a
+  -- flag that the next iteration of the main loop should exit, but the current
+  -- iteration will handle all events first and then go to sleep until there is
+  -- something to do. This means that a simple leaveMainLoop alone won't work,
+  -- even if we add some work which can be done immediately. So as a workaround,
+  -- we register a timer callback which never gets called (but we nevertheless
+  -- have to sleep for that time). Ugly!
+  ifFreeGLUT (do leaveMainLoop; addTimerCallback 10 (return ())) exitSuccess
+
+ifFreeGLUT :: IO () -> IO () -> IO ()
+ifFreeGLUT freeGLUTAction otherAction = do
+  v <- get glutVersion
+  if "freeglut" `isPrefixOf` v
+    then freeGLUTAction
+    else otherAction
+
+--------------------------------------------------------------------------------
+
+-- Note that the list of extensions might be empty because we use the core
+-- profile, so we can't test the existence before the actual getProcAddress.
+swapInterval :: Int -> IO ()
+swapInterval interval = do
+  funPtr <- getProcAddress swapIntervalName
+  unless (funPtr == nullFunPtr) $
+    void $ makeSwapInterval funPtr (fromIntegral interval)
+
+swapIntervalName :: String
+#if OS_WINDOWS
+swapIntervalName = "wglGetSwapIntervalEXT"
+
+foreign import CALLCONV "dynamic" makeSwapInterval
+  :: FunPtr (CInt -> IO CInt)
+  ->         CInt -> IO CInt
+#else
+swapIntervalName = "glXSwapIntervalSGI"
+
+foreign import CALLCONV "dynamic" makeSwapInterval
+  :: FunPtr (CInt -> IO CInt)
+  ->         CInt -> IO CInt
+#endif
+
+--------------------------------------------------------------------------------
+-- Commandline handling: Not in the original code, but very convenient.
+
 handleArgs :: [String] -> AppInfo -> IO AppInfo
 handleArgs args theAppInfo =
   handleParseResult $ execParserPure (prefs idm) opts args
@@ -209,66 +288,3 @@ boolean = do
     _ | s `elem` [ "0", "f", "F", "false", "FALSE", "False" ] ->  return False
       | s `elem` [ "1", "t", "T", "true", "TRUE", "True" ] -> return True
       | otherwise -> readerError $ show s ++ " is not a boolean"
-
-displayCB :: Application s -> s -> UTCTime -> DisplayCallback
-displayCB theApp state startTime = do
-  currentTime <- getCurrentTime
-  render theApp state $ realToFrac (currentTime `diffUTCTime` startTime)
-  swapBuffers
-  postRedisplay Nothing
-
-keyboardMouseCB :: Application s -> s -> KeyboardMouseCallback
-keyboardMouseCB theApp state key keyState _modifiers _position =
-  case (key, keyState) of
-    (Char '\ESC', Up) -> closeCB theApp state
-    (Char c, _) -> onKey theApp state (Right c) keyState
-    (SpecialKey k, _) -> onKey theApp state (Left k) keyState
-    (MouseButton b, _) -> onMouseButton theApp state b keyState
-
-closeCB :: Application s -> s -> IO ()
-closeCB theApp state = do
-  shutdown theApp state
-  gma <- get gameModeActive
-  when gma leaveGameMode
-  displayCallback $= return ()
-  closeCallback $= Nothing
-  -- Exiting is a bit tricky due to a freeglut bug: leaveMainLoop just sets a
-  -- flag that the next iteration of the main loop should exit, but the current
-  -- iteration will handle all events first and then go to sleep until there is
-  -- something to do. This means that a simple leaveMainLoop alone won't work,
-  -- even if we add some work which can be done immediately. So as a workaround,
-  -- we register a timer callback which never gets called (but we nevertheless
-  -- have to sleep for that time). Ugly!
-  ifFreeGLUT (do leaveMainLoop; addTimerCallback 10 (return ())) exitSuccess
-
-ifFreeGLUT :: IO () -> IO () -> IO ()
-ifFreeGLUT freeGLUTAction otherAction = do
-  v <- get glutVersion
-  if "freeglut" `isPrefixOf` v
-    then freeGLUTAction
-    else otherAction
-
---------------------------------------------------------------------------------
-
--- Note that the list of extensions might be empty because we use the core
--- profile, so we can't test the existence before the actual getProcAddress.
-swapInterval :: Int -> IO ()
-swapInterval interval = do
-  funPtr <- getProcAddress swapIntervalName
-  unless (funPtr == nullFunPtr) $
-    void $ makeSwapInterval funPtr (fromIntegral interval)
-
-swapIntervalName :: String
-#if OS_WINDOWS
-swapIntervalName = "wglGetSwapIntervalEXT"
-
-foreign import CALLCONV "dynamic" makeSwapInterval
-  :: FunPtr (CInt -> IO CInt)
-  ->         CInt -> IO CInt
-#else
-swapIntervalName = "glXSwapIntervalSGI"
-
-foreign import CALLCONV "dynamic" makeSwapInterval
-  :: FunPtr (CInt -> IO CInt)
-  ->         CInt -> IO CInt
-#endif
