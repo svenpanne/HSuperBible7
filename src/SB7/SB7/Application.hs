@@ -3,7 +3,8 @@ module SB7.Application (
   Application(..), app,
   AppInfo(..), appInfo,
   run,
-  windowTitle, extensionSupported
+  windowTitle, extensionSupported,
+  SpecialKey(..), KeyState(..), MouseButton(..)
 ) where
 
 #if !MIN_VERSION_base(4,8,0)
