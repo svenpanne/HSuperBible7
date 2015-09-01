@@ -111,9 +111,17 @@ appInfo = AppInfo
 
 run :: Application s -> IO ()
 run theApp = do
-  startTime <- getCurrentTime
   (_progName, args) <- getArgsAndInitialize
   theAppInfo <- handleArgs args =<< SB7.Application.init theApp
+  initializeGLUT theAppInfo
+  printInfo theAppInfo
+  theState <- startup theApp
+  registerCallbacks theApp theAppInfo theState
+  ifFreeGLUT (actionOnWindowClose $= MainLoopReturns) (return ())
+  mainLoop
+
+initializeGLUT :: AppInfo -> IO ()
+initializeGLUT theAppInfo = do
   let numOpt f fld = opt (f . fromIntegral . fld $ theAppInfo) ((> 0) . fld)
       opt val predicate = if predicate theAppInfo then [ val ] else []
       width = (\(Size w _) -> w) . SB7.Application.initialWindowSize
@@ -139,6 +147,8 @@ run theApp = do
   unless (SB7.Application.cursor theAppInfo) (GLUT.cursor $= None)
   swapInterval $ if vsync theAppInfo then 1 else 0
 
+printInfo :: AppInfo -> IO ()
+printInfo theAppInfo = do
   when (debug theAppInfo) $
     forM_ [ ("VENDOR", vendor),
             ("VERSION", glVersion),
@@ -146,10 +156,11 @@ run theApp = do
       val <- get var
       hPutStrLn stderr (name ++ ": " ++ val)
 
-  theState <- startup theApp
+registerCallbacks :: Application s -> AppInfo -> s -> IO ()
+registerCallbacks theApp theAppInfo theState = do
   state <- newIORef theState
   let updateState cb = get state >>= cb >>= (state $=)
-
+  startTime <- getCurrentTime
   displayCallback $= (updateState $ displayCB theApp startTime)
   closeCallback $= Just (updateState $ closeCB theApp)
   reshapeCallback $= Just (\size -> updateState $ \s -> onResize theApp s size)
@@ -167,9 +178,6 @@ run theApp = do
     debugMessageCallback $=
       Just (\msg -> updateState $ \s -> onDebugMessage theApp s msg >> return s)
     debugOutputSynchronous $= Enabled
-
-  ifFreeGLUT (actionOnWindowClose $= MainLoopReturns) (return ())
-  mainLoop
 
 displayCB :: Application s -> UTCTime -> s -> IO s
 displayCB theApp startTime state = do
