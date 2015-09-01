@@ -12,6 +12,7 @@ import Control.Applicative( (<$>) )
 #endif
 import Control.Monad ( forM_, when, unless, void )
 import Control.Monad.Trans.Reader ( local )
+import Data.IORef ( newIORef )
 import Data.List ( isPrefixOf )
 import Data.Time.Clock ( UTCTime, diffUTCTime, getCurrentTime )
 import Foreign.C.Types
@@ -54,10 +55,10 @@ data Application s = Application
   , startup :: IO s
   , render :: s -> Double -> IO ()
   , shutdown :: s -> IO ()
-  , onResize :: s -> Size -> IO ()
-  , onKey :: s -> Either SpecialKey Char -> KeyState -> IO ()
-  , onMouseButton :: s -> MouseButton -> KeyState -> IO ()
-  , onMouseMove :: s -> Position -> IO ()
+  , onResize :: s -> Size -> IO s
+  , onKey :: s -> Either SpecialKey Char -> KeyState -> IO s
+  , onMouseButton :: s -> MouseButton -> KeyState -> IO s
+  , onMouseMove :: s -> Position -> IO s
   , onDebugMessage :: s -> DebugMessage -> IO ()
   }
 
@@ -67,10 +68,10 @@ app = Application
   , startup = return undefined
   , render = \_state _currentTime -> return ()
   , shutdown = \_state -> return ()
-  , onResize = \_state _size -> return ()
-  , onKey = \_state _key _keyState -> return ()
-  , onMouseButton = \_state _mouseButton _keyState -> return ()
-  , onMouseMove = \_state _position -> return ()
+  , onResize = \state _size -> return state
+  , onKey = \state _key _keyState -> return state
+  , onMouseButton = \state _mouseButton _keyState -> return state
+  , onMouseMove = \state _position -> return state
   , onDebugMessage =
       \_state (DebugMessage _source _typ _ident _severity message) ->
         hPutStrLn stderr message
@@ -145,37 +146,40 @@ run theApp = do
       val <- get var
       hPutStrLn stderr (name ++ ": " ++ val)
 
-  state <- startup theApp
+  theState <- startup theApp
+  state <- newIORef theState
+  let updateState cb = get state >>= cb >>= (state $=)
 
-  displayCallback $= displayCB theApp state startTime
-  closeCallback $= Just (closeCB theApp state)
-  reshapeCallback $= Just (onResize theApp state)
-  keyboardMouseCallback $= Just (keyboardMouseCB theApp state)
-  motionCallback $= Just (onMouseMove theApp state)
-  passiveMotionCallback $= Just (onMouseMove theApp state)
+  displayCallback $= (updateState $ displayCB theApp startTime)
+  closeCallback $= Just (updateState $ closeCB theApp)
+  reshapeCallback $= Just (\size -> updateState $ \s -> onResize theApp s size)
+  keyboardMouseCallback $= Just (\key keyState _modifiers _position ->
+    case (key, keyState) of
+      (Char '\ESC', Up) -> updateState $ closeCB theApp
+      (Char c, _) -> updateState $ \s -> onKey theApp s (Right c) keyState
+      (SpecialKey k, _) -> updateState $ \s -> onKey theApp s (Left k) keyState
+      (MouseButton b, _) ->
+        updateState $ \s -> onMouseButton theApp s b keyState)
+  motionCallback $= Just (\pos -> updateState $ \s -> onMouseMove theApp s pos)
+  passiveMotionCallback $=
+    Just (\pos -> updateState $ \s -> onMouseMove theApp s pos)
   when (debug theAppInfo) $ do
-    debugMessageCallback $= Just (onDebugMessage theApp state)
+    debugMessageCallback $=
+      Just (\msg -> updateState $ \s -> onDebugMessage theApp s msg >> return s)
     debugOutputSynchronous $= Enabled
 
   ifFreeGLUT (actionOnWindowClose $= MainLoopReturns) (return ())
   mainLoop
 
-displayCB :: Application s -> s -> UTCTime -> DisplayCallback
-displayCB theApp state startTime = do
+displayCB :: Application s -> UTCTime -> s -> IO s
+displayCB theApp startTime state = do
   currentTime <- getCurrentTime
   render theApp state $ realToFrac (currentTime `diffUTCTime` startTime)
   swapBuffers
   postRedisplay Nothing
+  return state
 
-keyboardMouseCB :: Application s -> s -> KeyboardMouseCallback
-keyboardMouseCB theApp state key keyState _modifiers _position =
-  case (key, keyState) of
-    (Char '\ESC', Up) -> closeCB theApp state
-    (Char c, _) -> onKey theApp state (Right c) keyState
-    (SpecialKey k, _) -> onKey theApp state (Left k) keyState
-    (MouseButton b, _) -> onMouseButton theApp state b keyState
-
-closeCB :: Application s -> s -> IO ()
+closeCB :: Application s -> s -> IO s
 closeCB theApp state = do
   shutdown theApp state
   displayCallback $= return ()
@@ -190,6 +194,7 @@ closeCB theApp state = do
   -- we register a timer callback which never gets called (but we nevertheless
   -- have to sleep for that time). Ugly!
   ifFreeGLUT (do leaveMainLoop; addTimerCallback 10 (return ())) exitSuccess
+  return state
 
 ifFreeGLUT :: IO () -> IO () -> IO ()
 ifFreeGLUT freeGLUTAction otherAction = do

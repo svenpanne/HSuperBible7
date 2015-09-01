@@ -3,14 +3,13 @@
 
 module Main ( main ) where
 
-import Data.IORef ( IORef, newIORef )
 import SB7
 
 -- Note that we deviate a bit from the book: We use a key callback to toggle
 -- (via the 'm' key) between the 2 shader programs instead of making this a
 -- compile-time decision.
 data State = State
-  { interpolate :: IORef Bool
+  { interpolate :: Bool
   , programPos :: Program
   , programInterpolate :: Program
   , vao :: VertexArrayObject
@@ -78,9 +77,8 @@ startup = do
   theVao <- genObjectName
   bindVertexArrayObject $= Just theVao
 
-  theInterpolate <- newIORef True
   return $ State
-    { interpolate = theInterpolate
+    { interpolate = True
     , programPos = theProgramPos
     , programInterpolate = theProgramInterpolate
     , vao = theVao
@@ -102,17 +100,18 @@ compileAndLink fs_source vs_source = do
   linkProgram theProgram
   return theProgram
 
--- TODO: Perhaps we should return the state to get rid of the IORef?
-onKey :: State -> Either SpecialKey Char -> KeyState -> IO ()
-onKey state (Right 'm') Down = interpolate state $~! not
-onKey _ _ _ = return ()
+onKey :: State -> Either SpecialKey Char -> KeyState -> IO State
+onKey state (Right 'm') Down =
+  return state { interpolate = not (interpolate state) }
+onKey state _ _ = return state
 
 render :: State -> Double -> IO ()
 render state _currentTime = do
   clearBuffer $ ClearColorBufferFloat 0 (Color4 0 0.25 0 1)
 
-  i <- get (interpolate state)
-  currentProgram $= Just ((if i then programInterpolate else programPos) state)
+  let prog | interpolate state = programInterpolate state
+           | otherwise = programPos state
+  currentProgram $= Just prog
   drawArrays Triangles 0 3
 
 shutdown :: State -> IO ()
