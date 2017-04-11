@@ -14,6 +14,9 @@ import Control.Monad ( forM_, when, unless, void )
 import Control.Monad.Trans.Reader ( local )
 import Data.IORef ( newIORef )
 import Data.List ( isPrefixOf )
+#if MIN_VERSION_optparse_applicative(0,13,0)
+import Data.Semigroup ( (<>) )
+#endif
 import Data.Time.Clock ( UTCTime, diffUTCTime, getCurrentTime )
 import Foreign.C.Types
 import Foreign.Ptr ( FunPtr, nullFunPtr )
@@ -28,19 +31,6 @@ import Graphics.UI.GLUT as GLUT
 import Graphics.GL ( getProcAddress )
 #else
 import Graphics.Rendering.OpenGL.Raw ( getProcAddress )
-#endif
-
---------------------------------------------------------------------------------
-
-#if !MIN_VERSION_base(4,5,0)
-import Data.Monoid ( Monoid )
-
-infixr 6 <>
-
--- | An infix synonym for 'mappend'.
-(<>) :: Monoid m => m -> m -> m
-(<>) = mappend
-{-# INLINE (<>) #-}
 #endif
 
 --------------------------------------------------------------------------------
